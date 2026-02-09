@@ -54,7 +54,7 @@ end
 %%
 figure(100); clf; hold on;
 
-sis = 17:22;   % real session indices (air-driven sessions)
+sis = 17:24;   % real session indices (air-driven sessions)
 
 for a = 1:3
     meanARI = arrayfun(@(s) s.perfMetrics.meanARI, ...
@@ -70,7 +70,7 @@ grid on;
 %%
 figure(200); clf; hold on;
 
-sis = 17:22;   % air-driven sessions
+% sis = 17:22;   % air-driven sessions
 
 for a = 1:3
 
@@ -101,7 +101,7 @@ grid on;
 
 
 %%
-sis = 17:22;                 % air-driven sessions
+% sis = 17:22;                 % air-driven sessions
 nSess = numel(sis);
 nAnim = numel(animal);
 
@@ -126,14 +126,14 @@ end
 
 tcolors = {'b','m'};
 data_C = M;%[meanSpeed_ON meanSpeed_OFF];
-[within,dvn,xlabels] = make_within_table({'Session','Air_Phase'},[6,2]);
+[within,dvn,xlabels] = make_within_table({'Session','Air_Phase'},[8,2]);
 dataT = make_between_table({data_C},dvn);
 ra = RMA(dataT,within,{0.05,{'hsd'}});
 %     ra.ranova
 print_for_manuscript(ra)
 
 %%
-sis   = 17:22;              % air-driven sessions
+% sis   = 17:22;              % air-driven sessions
 nSess = numel(sis);
 nAnim = numel(animal);
 
