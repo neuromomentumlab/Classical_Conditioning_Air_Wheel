@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../mnt/data/Classical_Conditioning"
+		},
+		{
+			"path": "../../../mnt/pdata/Classical_Conditioning"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}
