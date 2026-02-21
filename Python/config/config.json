@@ -1,0 +1,7 @@
+{
+  "paths": {
+    "code_base": "~/ccaw/code",
+    "raw_base": "mnt/data/Classical_Conditioning",
+    "proc_base": "/mnt/pdata/Classical_Conditioning"
+  }
+}
