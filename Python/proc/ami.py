@@ -76,3 +76,27 @@ def summarize_session_ami(b, baseline_sec=2.0):
         "speed_on_mean": np.nanmean(s_on),
         "speed_off_mean": np.nanmean(s_off),
     }
+
+def build_trial_table(b):
+    Air_r = np.asarray(b["Air_r"]).ravel()
+    Air_f = np.asarray(b["Air_f"]).ravel()
+    t = np.asarray(b["t"]).ravel()
+
+    forward_cm = np.asarray(b["trial_forward_cm"]).ravel()
+
+    # --- safety check ---
+    n = min(len(Air_r), len(Air_f), len(forward_cm))
+
+    Air_r = Air_r[:n]
+    Air_f = Air_f[:n]
+    forward_cm = forward_cm[:n]
+
+    duration_s = t[Air_f] - t[Air_r]
+    speed_trial = forward_cm / (duration_s + 1e-9)
+
+    return {
+        "forward_cm": forward_cm,
+        "duration_s": duration_s,
+        "speed_trial": speed_trial,
+        "n_trials": n,
+    }
