@@ -214,6 +214,8 @@ def make_behavior_struct(mat_file):
         (b["dist_path_cm"][-1] - b["dist_path_cm"][0] + np.finfo(float).eps)
     )
 
+    b = compute_forward_progress_per_trial(b)
+
     return b
 
 
@@ -358,3 +360,37 @@ def load_mat_v73(mat_file):
 
 
     return out
+
+def compute_forward_progress_per_trial(b):
+    """
+    Compute true Arduino-style forward progress per air trial.
+    """
+
+    enc = b["encoderCount"].astype(float)
+    fs  = b["fs"]
+
+    # encoder increments
+    dEnc = np.diff(enc, prepend=enc[0])
+
+    # Arduino behavior: clamp negatives to zero
+    dEnc_forward = np.maximum(dEnc, 0)
+
+    # convert to cm
+    wheel_diameter_cm = 32
+    wheel_circumference_cm = np.pi * wheel_diameter_cm
+    cm_per_count = wheel_circumference_cm / b["countsPerRev"]
+
+    forward_cm = dEnc_forward * cm_per_count
+
+    Air_r = np.asarray(b["Air_r"])
+    Air_f = np.asarray(b["Air_f"])
+
+    progress = []
+
+    for r, f in zip(Air_r, Air_f):
+        prog = np.sum(forward_cm[r:f])
+        progress.append(prog)
+
+    b["trial_forward_cm"] = np.array(progress)
+
+    return b
