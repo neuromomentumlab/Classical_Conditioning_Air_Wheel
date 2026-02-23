@@ -131,6 +131,18 @@ def summarize_session(b, trial_df, speed_thresh=1.0):
     """
     Compute session-level metrics.
     """
+    speedR = np.asarray(b["speed_net_cms"])
+    air   = np.asarray(b["air_bin"]).astype(bool)
+
+    eps = 1e-9
+
+    # --- speed separation ---
+    mean_on  = np.mean(speedR[air]) if np.any(air) else np.nan
+    mean_off = np.mean(speedR[~air]) if np.any(~air) else np.nan
+    speed_ratio = mean_on / (mean_off + eps)
+
+    # --- stationary fraction during OFF ---
+    stationary_off = np.mean(speedR[~air] < speed_thresh) if np.any(~air) else np.nan
 
     speed = b["speed_net_cms"]
     air_bin = b["air_bin"]
@@ -147,11 +159,12 @@ def summarize_session(b, trial_df, speed_thresh=1.0):
         summary["n_trials"] = len(trial_df)
         summary["median_forward_cm"] = np.nanmedian(trial_df["forward_cm"])
         summary["median_AMI"] = np.nanmedian(trial_df["AMI_speed"])
+        summary["mean_AMI"] = np.nanmean(trial_df["AMI_speed"])
         summary["median_latency_s"] = np.nanmedian(trial_df["latency_s"])
 
-        # success definition (adjustable)
+        # success definition (adjustable) adjusted the threshold to 15cm
         summary["success_rate"] = np.nanmean(
-            trial_df["forward_cm"] >= 5.0
+            trial_df["forward_cm"] >= 15.0 # 15cm
         )
 
         summary["cv_forward"] = (
@@ -170,5 +183,71 @@ def summarize_session(b, trial_df, speed_thresh=1.0):
 
     summary["mean_speed_on_time"] = np.nanmean(speed[air_bin == 1])
     summary["mean_speed_off_time"] = np.nanmean(speed[air_bin == 0])
+    summary["speed_ratio"] = speed_ratio
+    summary["stationary_off_frac"] = stationary_off
 
     return summary
+
+
+def is_session_engaged(metrics,
+                       speed_ratio_thr=2.0,
+                       ami_thr=0.3,
+                       off_frac_thr=0.6):
+
+    return (
+        (metrics["speed_ratio"] > speed_ratio_thr) and
+        (metrics["mean_AMI"] > ami_thr) and
+        (metrics["stationary_off_frac"] > off_frac_thr)
+    )
+
+
+def build_session_summary(results,
+                          speed_ratio_thr=2.0,
+                          ami_thr=0.3,
+                          off_frac_thr=0.6,
+                          speed_thresh=1.0):
+
+    rows = []
+
+    for animal, days in results.items():
+        for date, b in days.items():
+
+            try:
+                trial_df = build_trial_table(b, drop_n=3)
+                metrics = summarize_session(b, trial_df, speed_thresh = speed_thresh)
+                # metrics = compute_session_metrics(
+                #     b,
+                #     speed_thresh=speed_thresh
+                # )
+
+                engaged = is_session_engaged(
+                    metrics,
+                    speed_ratio_thr=speed_ratio_thr,
+                    ami_thr=ami_thr,
+                    off_frac_thr=off_frac_thr
+                )
+
+                row = {
+                    "animal": animal,
+                    "date": date,
+                    "engaged": engaged,
+                    **metrics
+                }
+
+                rows.append(row)
+
+            except Exception as e:
+                rows.append({
+                    "animal": animal,
+                    "date": date,
+                    "engaged": False,
+                    "error": str(e)
+                })
+
+    df = pd.DataFrame(rows)
+
+    # nice ordering
+    if not df.empty:
+        df = df.sort_values(["animal", "date"]).reset_index(drop=True)
+
+    return df
