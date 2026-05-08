@@ -26,21 +26,56 @@ def build_classical_conditioning_dict(raw_root: str | Path) -> Dict[str, Dict[st
     - Phase classification is based on date string
     - Only folders matching 'NML*' are treated as animals
     """
-
+    # ---------- check mount ----------
     raw_root = Path(raw_root)
+    if not raw_root.exists():
+        print(f"\nDATA DIRECTORY NOT MOUNTED:\n{raw_root}\n")
+        return {}
     data_dict: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
     # ---------- EDITABLE PHASE BOUNDARIES ----------
-    HABITUATION_END = "2026_01_11"
-    AIR_END = "2026_01_27"
+    DEFAULT_HABITUATION_END = "2026_01_11"
+    DEFAULT_AIR_END = "2026_01_27"
 
-    def classify_phase(date_str: str) -> str:
-        if date_str <= HABITUATION_END:
+    # ---------- ANIMAL-SPECIFIC PHASE BOUNDARIES ----------
+    # Edit these dates for NML_07 and NML_08
+    PHASE_BOUNDARIES = {
+        "NML_07": {
+            "habituation_end": "2026_02_20",
+            "air_end": "2026_03_10",
+        },
+        "NML_08": {
+            "habituation_end": "2026_02_20",
+            "air_end": "2026_03_10",
+        },
+    }
+
+    def classify_phase(animal: str, date_str: str) -> str:
+        boundaries = PHASE_BOUNDARIES.get(
+            animal,
+            {
+                "habituation_end": DEFAULT_HABITUATION_END,
+                "air_end": DEFAULT_AIR_END,
+            },
+        )
+
+        habituation_end = boundaries["habituation_end"]
+        air_end = boundaries["air_end"]
+
+        if date_str <= habituation_end:
             return "habituation"
-        elif date_str <= AIR_END:
+        elif date_str <= air_end:
             return "air_training"
         else:
             return "unknown"
+
+    # def classify_phase(date_str: str) -> str:
+    #     if date_str <= HABITUATION_END:
+    #         return "habituation"
+    #     elif date_str <= AIR_END:
+    #         return "air_training"
+    #     else:
+    #         return "unknown"
 
     # ---------- iterate animals ----------
     for animal_dir in sorted(raw_root.glob("NML*")):
@@ -62,7 +97,7 @@ def build_classical_conditioning_dict(raw_root: str | Path) -> Dict[str, Dict[st
                 "pupi": None,
                 "video": None,
                 "recording": None,
-                "phase": classify_phase(date_name),
+                "phase": classify_phase(animal, date_name),
                 "path": str(date_dir),
             }
 
