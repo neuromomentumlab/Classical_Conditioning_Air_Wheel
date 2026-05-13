@@ -17,6 +17,8 @@ from pathlib import Path
 from src.utils.pdata_io import (
     save_behavior_npz,
     load_behavior_npz,
+    save_behavior_h5,
+    load_behavior_h5,
 )
 
 def process_cc_data(
@@ -75,7 +77,9 @@ def process_cc_data(
 
             # cache
             if not overwrite:
-                cached = load_behavior_npz(animal_id, date)
+                # cached = load_behavior_npz(animal_id, date)
+                # cached = load_behavior_h5(animal_id, date)
+                cached = {}
                 if cached is not None:
                     if verbose:
                         print(f"[CACHE] {animal_id} {date}")
@@ -98,9 +102,11 @@ def process_cc_data(
                 continue
 
             if save:
-                save_behavior_npz(b, animal_id, date)
+                # save_behavior_npz(b, animal_id, date)
+                save_behavior_h5(b, animal_id, date)
+                # return
 
-            results.setdefault(animal_id, {})[date] = b
+            # results.setdefault(animal_id, {})[date] = b
 
     return results
 

@@ -36,19 +36,22 @@ def build_classical_conditioning_dict(raw_root: str | Path) -> Dict[str, Dict[st
     # ---------- EDITABLE PHASE BOUNDARIES ----------
     DEFAULT_HABITUATION_END = "2026_01_11"
     DEFAULT_AIR_END = "2026_01_27"
+    DEFAULT_TONE_AIR_END = "2026_02_06"
 
     # ---------- ANIMAL-SPECIFIC PHASE BOUNDARIES ----------
-    # Edit these dates for NML_07 and NML_08
     PHASE_BOUNDARIES = {
         "NML_07": {
             "habituation_end": "2026_02_20",
-            "air_end": "2026_03_10",
+            "air_end": "2026_03_11",
+            "tone_air_end": "2026_03_21",
         },
         "NML_08": {
             "habituation_end": "2026_02_20",
-            "air_end": "2026_03_10",
+            "air_end": "2026_03_11",
+            "tone_air_end": "2026_03_21",
         },
     }
+
 
     def classify_phase(animal: str, date_str: str) -> str:
         boundaries = PHASE_BOUNDARIES.get(
@@ -56,26 +59,22 @@ def build_classical_conditioning_dict(raw_root: str | Path) -> Dict[str, Dict[st
             {
                 "habituation_end": DEFAULT_HABITUATION_END,
                 "air_end": DEFAULT_AIR_END,
+                "tone_air_end": DEFAULT_TONE_AIR_END,
             },
         )
 
         habituation_end = boundaries["habituation_end"]
         air_end = boundaries["air_end"]
+        tone_air_end = boundaries["tone_air_end"]
 
         if date_str <= habituation_end:
             return "habituation"
         elif date_str <= air_end:
             return "air_training"
+        elif date_str <= tone_air_end:
+            return "tone_air_training"
         else:
             return "unknown"
-
-    # def classify_phase(date_str: str) -> str:
-    #     if date_str <= HABITUATION_END:
-    #         return "habituation"
-    #     elif date_str <= AIR_END:
-    #         return "air_training"
-    #     else:
-    #         return "unknown"
 
     # ---------- iterate animals ----------
     for animal_dir in sorted(raw_root.glob("NML*")):

@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from datetime import datetime
+
 
 
 # =====================================================
@@ -247,6 +249,120 @@ def build_session_summary(results,
     df = pd.DataFrame(rows)
 
     # nice ordering
+    if not df.empty:
+        df = df.sort_values(["animal", "date"]).reset_index(drop=True)
+
+    return df
+
+
+
+
+def parse_date(date_str):
+    return datetime.strptime(date_str, "%Y_%m_%d")
+
+
+def classify_locomotor_state(b, speed_thresh=1.0):
+    """
+    Classify each time point into locomotor states using path speed
+    and signed/net speed.
+
+    States:
+        stationary
+        forward
+        backward
+        low_net_movement
+    """
+
+    speed_net = np.asarray(b["speed_net_cms"], dtype=float)
+    speed_path = np.asarray(b["speed_path_cms"], dtype=float)
+
+    # Make sure arrays are same length
+    n = min(len(speed_net), len(speed_path))
+    speed_net = speed_net[:n]
+    speed_path = speed_path[:n]
+
+    valid = np.isfinite(speed_net) & np.isfinite(speed_path)
+
+    state = np.full(n, "invalid", dtype=object)
+
+    # Stationary is based on path speed / movement magnitude
+    state[valid & (speed_path <= speed_thresh)] = "stationary"
+
+    # Directional movement is based on signed speed
+    state[valid & (speed_path > speed_thresh) & (speed_net > speed_thresh)] = "forward"
+    state[valid & (speed_path > speed_thresh) & (speed_net < -speed_thresh)] = "backward"
+
+    # Movement without strong net direction
+    state[
+        valid
+        & (speed_path > speed_thresh)
+        & (np.abs(speed_net) <= speed_thresh)
+    ] = "low_net_movement"
+
+    return state, speed_net, speed_path
+
+
+def summarize_habituation_locomotor_states(resultsH, speed_thresh=1.0):
+    """
+    Build one row per animal per habituation day with locomotor-state fractions.
+    """
+
+    rows = []
+
+    for animal, days in resultsH.items():
+
+        sorted_dates = sorted(days.keys(), key=parse_date)
+        n_days = len(sorted_dates)
+
+        for i, date in enumerate(sorted_dates, start=1):
+
+            b = days[date]
+
+            state, speed_net, speed_path = classify_locomotor_state(
+                b,
+                speed_thresh=speed_thresh
+            )
+
+            valid = state != "invalid"
+            n_valid = np.sum(valid)
+
+            if n_valid == 0:
+                continue
+
+            frac_stationary = np.mean(state[valid] == "stationary")
+            frac_forward = np.mean(state[valid] == "forward")
+            frac_backward = np.mean(state[valid] == "backward")
+            frac_low_net = np.mean(state[valid] == "low_net_movement")
+
+            frac_moving = 1.0 - frac_stationary
+
+            rows.append({
+                "animal": animal,
+                "date": date,
+                "phase": "Habituation",
+                "speed_thresh": speed_thresh,
+
+                "habituation_session": i,
+                "n_habituation_sessions": n_days,
+                "normalized_day": 0 if n_days == 1 else (i - 1) / (n_days - 1),
+
+                "frac_stationary": frac_stationary,
+                "frac_moving": frac_moving,
+                "frac_forward": frac_forward,
+                "frac_backward": frac_backward,
+                "frac_low_net_movement": frac_low_net,
+
+                "mean_path_speed": np.nanmean(speed_path),
+                "median_path_speed": np.nanmedian(speed_path),
+                "mean_net_speed": np.nanmean(speed_net),
+                "median_net_speed": np.nanmedian(speed_net),
+
+                "total_path_distance_cm": np.nanmax(b["dist_path_cm"]) - np.nanmin(b["dist_path_cm"]),
+                "net_distance_cm": b["dist_net_cm"][-1] - b["dist_net_cm"][0],
+            })
+
+    df = pd.DataFrame(rows)
+
     if not df.empty:
         df = df.sort_values(["animal", "date"]).reset_index(drop=True)
 

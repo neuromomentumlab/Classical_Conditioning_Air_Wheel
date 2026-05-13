@@ -27,7 +27,7 @@ def plot_air_speed(b, title=None, tlim=None, ax=None):
     """
 
     t = b["t"]
-    speed = b["speed_net_cms"]
+    speed = b["speed_path_cms"]
     air = b["air_bin"].astype(float)
 
     # -----------------------------
