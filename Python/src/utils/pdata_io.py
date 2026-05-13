@@ -6,6 +6,33 @@ from pathlib import Path
 from src.utils.config import PROC_BASE
 import json
 
+REQUIRED_KEYS = {
+    "trial_table": [
+        "Air_r",
+        "Air_f",
+        "t",
+        "fs",
+        "speed_net_cms",
+        "trial_forward_cm",
+    ],
+
+    "session_summary": [
+        "Air_r",
+        "Air_f",
+        "t",
+        "fs",
+        "speed_net_cms",
+        "trial_forward_cm",
+        "air_bin",
+    ],
+
+    "locomotor_state": [
+        "speed_net_cms",
+        "speed_path_cms",
+        "dist_path_cm",
+        "dist_net_cm",
+    ],
+}
 
 # =====================================================
 # Session directory (mirror RAW → PROC)
@@ -222,3 +249,17 @@ def load_behavior_h5(animal, date, keys=None, root=PROC_BASE):
 
     return out
 
+
+def load_behavior_for_analysis(animal, date, analysis_name, root=None):
+    """
+    Load only the H5 variables required for a specific analysis.
+    """
+
+    keys = REQUIRED_KEYS[analysis_name]
+
+    if root is None:
+        b = load_behavior_h5(animal, date, keys=keys)
+    else:
+        b = load_behavior_h5(animal, date, keys=keys, root=root)
+
+    return b

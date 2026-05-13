@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime
+import src.utils.pdata_io as pdio
 
 
 
@@ -360,6 +361,202 @@ def summarize_habituation_locomotor_states(resultsH, speed_thresh=1.0):
                 "total_path_distance_cm": np.nanmax(b["dist_path_cm"]) - np.nanmin(b["dist_path_cm"]),
                 "net_distance_cm": b["dist_net_cm"][-1] - b["dist_net_cm"][0],
             })
+
+    df = pd.DataFrame(rows)
+
+    if not df.empty:
+        df = df.sort_values(["animal", "date"]).reset_index(drop=True)
+
+    return df
+
+def build_session_summary_from_h5(
+    cc_data,
+    phase="air_training",
+    animals=None,
+    speed_ratio_thr=2.0,
+    ami_thr=0.3,
+    off_frac_thr=0.6,
+    speed_thresh=1.0,
+):
+
+    rows = []
+
+    for animal, days in cc_data.items():
+
+        if animals is not None and animal not in animals:
+            continue
+
+        for date, info in days.items():
+
+            if info.get("phase") != phase:
+                continue
+
+            try:
+                b = pdio.load_behavior_for_analysis(
+                    animal,
+                    date,
+                    analysis_name="session_summary"
+                )
+
+                if b is None:
+                    continue
+
+                trial_df = build_trial_table(b, drop_n=3)
+                metrics = summarize_session(
+                    b,
+                    trial_df,
+                    speed_thresh=speed_thresh
+                )
+
+                engaged = is_session_engaged(
+                    metrics,
+                    speed_ratio_thr=speed_ratio_thr,
+                    ami_thr=ami_thr,
+                    off_frac_thr=off_frac_thr,
+                )
+
+                rows.append({
+                    "animal": animal,
+                    "date": date,
+                    "phase": phase,
+                    "engaged": engaged,
+                    **metrics,
+                })
+
+            except Exception as e:
+                rows.append({
+                    "animal": animal,
+                    "date": date,
+                    "phase": phase,
+                    "engaged": False,
+                    "error": str(e),
+                })
+
+    df = pd.DataFrame(rows)
+
+    if not df.empty:
+        df = df.sort_values(["animal", "date"]).reset_index(drop=True)
+
+    return df
+
+def summarize_habituation_locomotor_states_from_h5(
+    cc_data,
+    speed_thresh=1.0,
+    animals=None,
+    verbose=True,
+):
+    """
+    Build one row per animal per habituation day with locomotor-state fractions.
+    Loads only the required variables from each H5 file.
+    """
+
+    rows = []
+
+    for animal, days in cc_data.items():
+
+        if animals is not None and animal not in animals:
+            continue
+
+        if verbose:
+            print("\n================================================")
+            print(f"Processing animal: {animal}")
+            print("================================================")
+
+        hab_dates = sorted(
+            [
+                date for date, info in days.items()
+                if info.get("phase") == "habituation"
+            ],
+            key=parse_date
+        )
+
+        n_days = len(hab_dates)
+
+        if verbose:
+            print(f"Found {n_days} habituation sessions")
+
+        for i, date in enumerate(hab_dates, start=1):
+
+            if verbose:
+                print(f"[{animal}] Session {i}/{n_days} Date: {date}")
+
+            try:
+                b = pdio.load_behavior_for_analysis(
+                    animal,
+                    date,
+                    analysis_name="locomotor_state"
+                )
+
+                if b is None:
+                    if verbose:
+                        print(f"[SKIP] No H5 file found for {animal} {date}")
+                    continue
+
+                if verbose:
+                    print(f"Loaded keys: {list(b.keys())}")
+
+                state, speed_net, speed_path = classify_locomotor_state(
+                    b,
+                    speed_thresh=speed_thresh
+                )
+
+                valid = state != "invalid"
+                n_valid = np.sum(valid)
+
+                if n_valid == 0:
+                    if verbose:
+                        print(f"[SKIP] No valid samples for {animal} {date}")
+                    continue
+
+                frac_stationary = np.mean(state[valid] == "stationary")
+                frac_moving = 1.0 - frac_stationary
+                frac_forward = np.mean(state[valid] == "forward")
+                frac_backward = np.mean(state[valid] == "backward")
+                frac_low_net = np.mean(state[valid] == "low_net_movement")
+
+                if verbose:
+                    print(f"Computed locomotor states: {n_valid} valid samples")
+
+                rows.append({
+                    "animal": animal,
+                    "date": date,
+                    "phase": "habituation",
+                    "speed_thresh": speed_thresh,
+
+                    "habituation_session": i,
+                    "n_habituation_sessions": n_days,
+                    "normalized_day": 0 if n_days == 1 else (i - 1) / (n_days - 1),
+
+                    "frac_stationary": frac_stationary,
+                    "frac_moving": frac_moving,
+                    "frac_forward": frac_forward,
+                    "frac_backward": frac_backward,
+                    "frac_low_net_movement": frac_low_net,
+
+                    "mean_path_speed": np.nanmean(speed_path),
+                    "median_path_speed": np.nanmedian(speed_path),
+                    "mean_net_speed": np.nanmean(speed_net),
+                    "median_net_speed": np.nanmedian(speed_net),
+
+                    "total_path_distance_cm": (
+                        np.nanmax(b["dist_path_cm"]) - np.nanmin(b["dist_path_cm"])
+                    ),
+                    "net_distance_cm": (
+                        b["dist_net_cm"][-1] - b["dist_net_cm"][0]
+                    ),
+                })
+
+            except Exception as e:
+
+                if verbose:
+                    print(f"[ERROR] {animal} {date}: {e}")
+
+                rows.append({
+                    "animal": animal,
+                    "date": date,
+                    "phase": "habituation",
+                    "error": str(e),
+                })
 
     df = pd.DataFrame(rows)
 
