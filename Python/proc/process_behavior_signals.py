@@ -257,15 +257,16 @@ def find_falling_edge(signal, thresh, min_sep):
     edges = np.where(np.diff(np.concatenate([sig.astype(int), [0]])) == -1)[0]
     return edges
 
-def sanitize_air_edges(Air_r, Air_f):
+def sanitize_air_edges(Air_r, Air_f, drop_last=True):
     """
-    Ensure valid air epochs.
+    Ensure valid air/LED epochs.
 
     Rules
     -----
-    1. Remove leading partial ON epoch if recording starts during air ON
+    1. Remove leading partial ON epoch if recording starts during ON
     2. Enforce one-to-one pairing
     3. Remove non-positive duration trials
+    4. Optionally drop the final event/trial
     """
 
     Air_r = np.asarray(Air_r).ravel()
@@ -278,15 +279,14 @@ def sanitize_air_edges(Air_r, Air_f):
     }
 
     # -------------------------------------------------
-    # Rule 1: recording started during Air ON
+    # Rule 1: recording started during ON
     # -------------------------------------------------
     if len(Air_r) and len(Air_f):
-
         if Air_r[0] == 0:
             Air_r = Air_r[1:]
             Air_f = Air_f[1:]
             report["actions"].append(
-                "Removed first epoch (recording started during Air ON)"
+                "Removed first epoch (recording started during ON)"
             )
 
     # -------------------------------------------------
@@ -306,10 +306,19 @@ def sanitize_air_edges(Air_r, Air_f):
     Air_r = Air_r[valid]
     Air_f = Air_f[valid]
 
+    # -------------------------------------------------
+    # Rule 4: drop final event/trial
+    # -------------------------------------------------
+    if drop_last and len(Air_r) > 0:
+        Air_r = Air_r[:-1]
+        Air_f = Air_f[:-1]
+        report["actions"].append("Dropped last event/trial")
+
     report["final_r"] = len(Air_r)
     report["final_f"] = len(Air_f)
 
     return Air_r.astype(int), Air_f.astype(int), report
+
 
 def load_mat_file(mat_file):
     """

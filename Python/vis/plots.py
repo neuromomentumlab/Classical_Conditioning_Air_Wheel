@@ -27,7 +27,7 @@ def plot_air_speed(b, title=None, tlim=None, ax=None):
     """
 
     t = b["t"]
-    speed = b["speed_path_cms"]
+    speed = b["speed_net_cms"]
     air = b["air_bin"].astype(float)
 
     # -----------------------------
@@ -106,7 +106,7 @@ def quick_plot_from_h5(cc_data, animal, date, tlim=None, verbose=True):
 
     Loads only the variables needed for plot_air_speed:
         t
-        speed_path_cms
+        speed_net_cms
         air_bin
     """
 
@@ -120,7 +120,7 @@ def quick_plot_from_h5(cc_data, animal, date, tlim=None, verbose=True):
 
     keys = [
         "t",
-        "speed_path_cms",
+        "speed_net_cms",
         "air_bin",
     ]
 
