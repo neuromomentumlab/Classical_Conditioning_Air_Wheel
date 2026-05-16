@@ -341,3 +341,87 @@ def interactive_plot_keys_from_h5(
 
     fig.show()
     return fig
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def quick_plot_speed_air(
+    b,
+    speed_key="speed_net_cms",
+    plot_fs=50,
+    tlim=None,
+    title=None,
+    figsize=(10, 4),
+):
+    """
+    Fast speed + air plot.
+
+    Downsamples speed for visualization and uses axvspan for air periods.
+    """
+
+    t = np.asarray(b["t"])
+    speed = np.asarray(b[speed_key])
+    air = np.asarray(b["air_bin"]).astype(int)
+
+    fs = float(b["fs"])
+
+    # -----------------------------
+    # Optional time limit
+    # -----------------------------
+    if tlim is not None:
+        keep = (t >= tlim[0]) & (t <= tlim[1])
+        t_plot = t[keep]
+        speed_plot = speed[keep]
+        air_plot = air[keep]
+        offset_idx = np.where(keep)[0][0]
+    else:
+        t_plot = t
+        speed_plot = speed
+        air_plot = air
+        offset_idx = 0
+
+    # -----------------------------
+    # Downsample for plotting
+    # -----------------------------
+    step = max(1, int(round(fs / plot_fs)))
+
+    t_ds = t_plot[::step]
+    speed_ds = speed_plot[::step]
+
+    # -----------------------------
+    # Detect air on/off edges in plotted window
+    # -----------------------------
+    air_diff = np.diff(np.concatenate([[0], air_plot, [0]]))
+    air_r = np.where(air_diff == 1)[0]
+    air_f = np.where(air_diff == -1)[0] - 1
+
+    # -----------------------------
+    # Plot
+    # -----------------------------
+    fig, ax = plt.subplots(figsize=figsize)
+
+    ax.plot(t_ds, speed_ds, linewidth=1.0, label=speed_key)
+
+    ymax = np.nanmax(speed_ds)
+    ymin = np.nanmin(speed_ds)
+
+    if not np.isfinite(ymax) or ymax <= 0:
+        ymax = 1
+
+    for r, f in zip(air_r, air_f):
+        if r < len(t_plot) and f < len(t_plot):
+            ax.axvspan(
+                t_plot[r],
+                t_plot[f],
+                alpha=0.25
+            )
+
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Speed (cm/s)")
+    ax.set_title(title if title is not None else speed_key)
+    ax.grid(alpha=0.2)
+    ax.legend()
+    plt.tight_layout()
+
+    return fig, ax

@@ -175,11 +175,11 @@ def make_behavior_struct(mat_file):
     Air_f = np.where(air_diff == -1)[0] - 1
 
     # Sanitize
-    Air_r, Air_f, report = sanitize_air_edges(Air_r, Air_f)
+    # Air_r, Air_f, report = sanitize_air_edges(Air_r, Air_f)
 
     b["Air_r"] = np.asarray(Air_r).ravel().astype(int)
     b["Air_f"] = np.asarray(Air_f).ravel().astype(int)
-    b["Air_edges_report"] = report
+    # b["Air_edges_report"] = report
 
     # -------------------------------------------------
     # Encoder

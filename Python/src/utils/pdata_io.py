@@ -263,3 +263,100 @@ def load_behavior_for_analysis(animal, date, analysis_name, root=None):
         b = load_behavior_h5(animal, date, keys=keys, root=root)
 
     return b
+
+
+# =====================================================
+# Project context cache
+# =====================================================
+
+import pickle
+from pathlib import Path
+
+
+def save_project_context(
+    cc_data,
+    data_root=None,
+    pdata_root=None,
+    cache_name="project_context.pkl",
+    overwrite=True,
+):
+    """
+    Save project-level variables so they can be loaded quickly in any notebook.
+
+    Saves:
+        data_root
+        pdata_root
+        cc_data
+    """
+
+    if data_root is None or pdata_root is None:
+        import src.utils.config as config
+        data_root = config.RAW_BASE
+        pdata_root = config.PROC_BASE
+
+    data_root = Path(data_root)
+    pdata_root = Path(pdata_root)
+
+    cache_dir = pdata_root / "_cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    cache_file = cache_dir / cache_name
+
+    if cache_file.exists() and not overwrite:
+        raise FileExistsError(f"Cache file already exists: {cache_file}")
+
+    project_context = {
+        "data_root": str(data_root),
+        "pdata_root": str(pdata_root),
+        "cc_data": cc_data,
+    }
+
+    with open(cache_file, "wb") as f:
+        pickle.dump(project_context, f)
+
+    print(f"[SAVED] Project context: {cache_file}")
+
+    return cache_file
+
+
+def load_project_context(
+    pdata_root=None,
+    cache_name="project_context.pkl",
+    return_dict=False,
+):
+    """
+    Load project-level variables saved by save_project_context().
+
+    Returns by default:
+        data_root, pdata_root, cc_data
+
+    If return_dict=True:
+        returns full dictionary.
+    """
+
+    if pdata_root is None:
+        import src.utils.config as config
+        pdata_root = config.PROC_BASE
+
+    pdata_root = Path(pdata_root)
+    cache_file = pdata_root / "_cache" / cache_name
+
+    if not cache_file.exists():
+        raise FileNotFoundError(f"Project context cache not found: {cache_file}")
+
+    with open(cache_file, "rb") as f:
+        project_context = pickle.load(f)
+
+    project_context["data_root"] = Path(project_context["data_root"])
+    project_context["pdata_root"] = Path(project_context["pdata_root"])
+
+    print(f"[LOADED] Project context: {cache_file}")
+
+    if return_dict:
+        return project_context
+
+    return (
+        project_context["data_root"],
+        project_context["pdata_root"],
+        project_context["cc_data"],
+    )
