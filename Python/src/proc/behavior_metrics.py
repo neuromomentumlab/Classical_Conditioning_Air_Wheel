@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 import src.utils.pdata_io as pdio
+import statsmodels.formula.api as smf
 
 
 
@@ -564,3 +565,972 @@ def summarize_habituation_locomotor_states_from_h5(
         df = df.sort_values(["animal", "date"]).reset_index(drop=True)
 
     return df
+
+
+def classify_window_locomotion(speed_path, speed_net, speed_thresh=1.0):
+    """
+    Classify locomotor state within a window.
+    """
+
+    speed_path = np.asarray(speed_path, dtype=float)
+    speed_net = np.asarray(speed_net, dtype=float)
+
+    valid = np.isfinite(speed_path) & np.isfinite(speed_net)
+
+    stationary = valid & (speed_path <= speed_thresh)
+    forward = valid & (speed_path > speed_thresh) & (speed_net > speed_thresh)
+    backward = valid & (speed_path > speed_thresh) & (speed_net < -speed_thresh)
+    low_net = valid & (speed_path > speed_thresh) & (np.abs(speed_net) <= speed_thresh)
+
+    n_valid = np.sum(valid)
+
+    if n_valid == 0:
+        return {
+            "frac_stationary": np.nan,
+            "frac_moving": np.nan,
+            "frac_forward": np.nan,
+            "frac_backward": np.nan,
+            "frac_low_net_movement": np.nan,
+            "dominant_locomotor_state": "invalid",
+        }
+
+    fractions = {
+        "stationary": np.mean(stationary[valid]),
+        "forward": np.mean(forward[valid]),
+        "backward": np.mean(backward[valid]),
+        "low_net_movement": np.mean(low_net[valid]),
+    }
+
+    dominant_state = max(fractions, key=fractions.get)
+
+    return {
+        "frac_stationary": fractions["stationary"],
+        "frac_moving": 1.0 - fractions["stationary"],
+        "frac_forward": fractions["forward"],
+        "frac_backward": fractions["backward"],
+        "frac_low_net_movement": fractions["low_net_movement"],
+        "dominant_locomotor_state": dominant_state,
+    }
+
+
+def compute_encoder_epoch_metrics(
+    windows_df,
+    speed_thresh=1.0,
+):
+    """
+    Compute encoder-derived metrics for each valid epoch/window.
+    Loads each animal/date session once, then extracts all windows for that session.
+    """
+
+    rows = []
+
+    # Only use valid windows
+    df = windows_df[windows_df["valid_window"]].copy()
+
+    keys = [
+        "t",
+        "fs",
+        "speed_path_cms",
+        "speed_net_cms",
+        "dist_path_cm",
+        "dist_net_cm",
+    ]
+
+    for (animal, date), sub in df.groupby(["animal", "date"]):
+
+        try:
+            b = pdio.load_behavior_h5(
+                animal,
+                date,
+                keys=keys
+            )
+
+            speed_path = np.asarray(b["speed_path_cms"]).reshape(-1)
+            speed_net = np.asarray(b["speed_net_cms"]).reshape(-1)
+            dist_path = np.asarray(b["dist_path_cm"]).reshape(-1)
+            dist_net = np.asarray(b["dist_net_cm"]).reshape(-1)
+
+            n = min(len(speed_path), len(speed_net), len(dist_path), len(dist_net))
+
+            speed_path = speed_path[:n]
+            speed_net = speed_net[:n]
+            dist_path = dist_path[:n]
+            dist_net = dist_net[:n]
+
+            for _, w in sub.iterrows():
+
+                start_idx = int(w["start_idx"])
+                end_idx = int(w["end_idx"])
+
+                # Python slice is end-exclusive
+                start_idx = max(0, start_idx)
+                end_idx = min(n, end_idx)
+
+                seg_path = speed_path[start_idx:end_idx]
+                seg_net = speed_net[start_idx:end_idx]
+
+                if len(seg_path) == 0:
+                    continue
+
+                state_metrics = classify_window_locomotion(
+                    seg_path,
+                    seg_net,
+                    speed_thresh=speed_thresh
+                )
+
+                distance_path_cm = dist_path[end_idx - 1] - dist_path[start_idx]
+                distance_net_cm = dist_net[end_idx - 1] - dist_net[start_idx]
+
+                rows.append({
+                    **w.to_dict(),
+
+                    "speed_thresh_cms": speed_thresh,
+                    "n_samples_window": len(seg_path),
+
+                    "mean_speed_path_cms": np.nanmean(seg_path),
+                    "median_speed_path_cms": np.nanmedian(seg_path),
+                    "peak_speed_path_cms": np.nanmax(seg_path),
+
+                    "mean_speed_net_cms": np.nanmean(seg_net),
+                    "median_speed_net_cms": np.nanmedian(seg_net),
+                    "min_speed_net_cms": np.nanmin(seg_net),
+                    "max_speed_net_cms": np.nanmax(seg_net),
+
+                    "distance_path_cm": distance_path_cm,
+                    "distance_net_cm": distance_net_cm,
+
+                    "net_direction_bias": (
+                        np.nanmean(seg_net) /
+                        (np.nanmean(seg_path) + 1e-9)
+                    ),
+
+                    **state_metrics,
+                })
+
+        except Exception as e:
+            print(f"[ERROR] {animal} {date}: {e}")
+
+    metrics_df = pd.DataFrame(rows)
+
+    if not metrics_df.empty:
+        metrics_df = metrics_df.sort_values(
+            ["phase", "animal", "date", "event_number", "epoch_name"]
+        ).reset_index(drop=True)
+
+    return metrics_df
+    
+
+import numpy as np
+import pandas as pd
+
+
+def add_normalized_phase_day(df):
+    """
+    Add session number and normalized phase day within each animal x phase.
+    """
+
+    df = df.copy()
+
+    # make sure date sorting works because date format is YYYY_MM_DD
+    session_table = (
+        df[["animal", "phase", "date"]]
+        .drop_duplicates()
+        .sort_values(["animal", "phase", "date"])
+        .reset_index(drop=True)
+    )
+
+    session_table["phase_session_number"] = np.nan
+    session_table["n_sessions_in_phase"] = np.nan
+    session_table["normalized_phase_day"] = np.nan
+
+    for (animal, phase), idx in session_table.groupby(["animal", "phase"]).groups.items():
+        idx = list(idx)
+        n = len(idx)
+
+        session_numbers = np.arange(1, n + 1)
+
+        if n == 1:
+            normalized = np.zeros(n)
+        else:
+            normalized = (session_numbers - 1) / (n - 1)
+
+        session_table.loc[idx, "phase_session_number"] = session_numbers
+        session_table.loc[idx, "n_sessions_in_phase"] = n
+        session_table.loc[idx, "normalized_phase_day"] = normalized
+
+    df = df.merge(
+        session_table,
+        on=["animal", "phase", "date"],
+        how="left"
+    )
+
+    return df
+
+import numpy as np
+import pandas as pd
+from datetime import datetime
+import src.utils.pdata_io as pdio
+
+
+
+def classify_locomotor_samples(speed_path, speed_net, speed_thresh=1.0):
+    """
+    Classify each sample within a window.
+
+    speed_path: movement magnitude
+    speed_net: signed movement direction
+    """
+
+    speed_path = np.asarray(speed_path, dtype=float)
+    speed_net = np.asarray(speed_net, dtype=float)
+
+    valid = np.isfinite(speed_path) & np.isfinite(speed_net)
+
+    state = np.full(len(speed_path), "invalid", dtype=object)
+
+    state[valid & (speed_path <= speed_thresh)] = "stationary"
+
+    state[
+        valid &
+        (speed_path > speed_thresh) &
+        (speed_net > speed_thresh)
+    ] = "forward"
+
+    state[
+        valid &
+        (speed_path > speed_thresh) &
+        (speed_net < -speed_thresh)
+    ] = "backward"
+
+    state[
+        valid &
+        (speed_path > speed_thresh) &
+        (np.abs(speed_net) <= speed_thresh)
+    ] = "low_net_movement"
+
+    return state
+
+
+def summarize_locomotor_state_in_window(speed_path, speed_net, speed_thresh=1.0):
+    """
+    Return fraction of samples in each locomotor state within one window.
+    """
+
+    state = classify_locomotor_samples(
+        speed_path,
+        speed_net,
+        speed_thresh=speed_thresh
+    )
+
+    valid = state != "invalid"
+    n_valid = np.sum(valid)
+
+    if n_valid == 0:
+        return {
+            "frac_stationary": np.nan,
+            "frac_moving": np.nan,
+            "frac_forward": np.nan,
+            "frac_backward": np.nan,
+            "frac_low_net_movement": np.nan,
+            "dominant_locomotor_state": "invalid",
+        }
+
+    frac_stationary = np.mean(state[valid] == "stationary")
+    frac_forward = np.mean(state[valid] == "forward")
+    frac_backward = np.mean(state[valid] == "backward")
+    frac_low_net = np.mean(state[valid] == "low_net_movement")
+    frac_moving = 1.0 - frac_stationary
+
+    state_fracs = {
+        "stationary": frac_stationary,
+        "forward": frac_forward,
+        "backward": frac_backward,
+        "low_net_movement": frac_low_net,
+    }
+
+    dominant_state = max(state_fracs, key=state_fracs.get)
+
+    return {
+        "frac_stationary": frac_stationary,
+        "frac_moving": frac_moving,
+        "frac_forward": frac_forward,
+        "frac_backward": frac_backward,
+        "frac_low_net_movement": frac_low_net,
+        "dominant_locomotor_state": dominant_state,
+    }
+
+
+def compute_encoder_metrics_for_windows(
+    windows_df,
+    speed_thresh=1.0,
+):
+    """
+    Compute encoder-derived metrics for each valid epoch/window.
+
+    One output row = one animal/date/event/epoch/window.
+    """
+
+    rows = []
+
+    df = windows_df[windows_df["valid_window"]].copy()
+
+    keys = [
+        "speed_path_cms",
+        "speed_net_cms",
+        "dist_path_cm",
+        "dist_net_cm",
+        "fs",
+    ]
+
+    for (animal, date), sub in df.groupby(["animal", "date"]):
+
+        try:
+            b = pdio.load_behavior_h5(
+                animal,
+                date,
+                keys=keys
+            )
+
+            speed_path = np.asarray(b["speed_path_cms"]).reshape(-1)
+            speed_net = np.asarray(b["speed_net_cms"]).reshape(-1)
+            dist_path = np.asarray(b["dist_path_cm"]).reshape(-1)
+            dist_net = np.asarray(b["dist_net_cm"]).reshape(-1)
+            fs = float(np.asarray(b["fs"]).squeeze())
+
+            n = min(
+                len(speed_path),
+                len(speed_net),
+                len(dist_path),
+                len(dist_net)
+            )
+
+            speed_path = speed_path[:n]
+            speed_net = speed_net[:n]
+            dist_path = dist_path[:n]
+            dist_net = dist_net[:n]
+
+            for _, w in sub.iterrows():
+
+                start_idx = int(w["start_idx"])
+                end_idx = int(w["end_idx"])
+
+                start_idx = max(0, start_idx)
+                end_idx = min(n, end_idx)
+
+                if end_idx <= start_idx:
+                    continue
+
+                seg_path = speed_path[start_idx:end_idx]
+                seg_net = speed_net[start_idx:end_idx]
+
+                state_metrics = summarize_locomotor_state_in_window(
+                    seg_path,
+                    seg_net,
+                    speed_thresh=speed_thresh
+                )
+
+                distance_path_cm = dist_path[end_idx - 1] - dist_path[start_idx]
+                distance_net_cm = dist_net[end_idx - 1] - dist_net[start_idx]
+
+                row = {
+                    **w.to_dict(),
+
+                    "speed_thresh_cms": speed_thresh,
+                    "fs": fs,
+                    "n_samples_window": len(seg_path),
+
+                    "mean_speed_path_cms": np.nanmean(seg_path),
+                    "median_speed_path_cms": np.nanmedian(seg_path),
+                    "peak_speed_path_cms": np.nanmax(seg_path),
+
+                    "mean_speed_net_cms": np.nanmean(seg_net),
+                    "median_speed_net_cms": np.nanmedian(seg_net),
+                    "min_speed_net_cms": np.nanmin(seg_net),
+                    "max_speed_net_cms": np.nanmax(seg_net),
+
+                    "distance_path_cm": distance_path_cm,
+                    "distance_net_cm": distance_net_cm,
+
+                    "net_direction_bias": (
+                        np.nanmean(seg_net) /
+                        (np.nanmean(seg_path) + 1e-9)
+                    ),
+
+                    **state_metrics,
+                }
+
+                rows.append(row)
+
+        except Exception as e:
+            print(f"[ERROR] {animal} {date}: {e}")
+
+    metrics_df = pd.DataFrame(rows)
+
+    if not metrics_df.empty:
+        metrics_df = metrics_df.sort_values(
+            ["phase", "animal", "date", "event_number", "epoch_name"]
+        ).reset_index(drop=True)
+
+    return metrics_df
+
+
+def make_session_epoch_summary(encoder_epoch_df):
+    """
+    Average window metrics within each animal/date/phase/epoch_name.
+    """
+
+    metrics = [
+        "mean_speed_path_cms",
+        "median_speed_path_cms",
+        "peak_speed_path_cms",
+        "mean_speed_net_cms",
+        "median_speed_net_cms",
+        "distance_path_cm",
+        "distance_net_cm",
+        "frac_stationary",
+        "frac_moving",
+        "frac_forward",
+        "frac_backward",
+        "frac_low_net_movement",
+        "net_direction_bias",
+    ]
+
+    group_cols = [
+        "animal",
+        "date",
+        "phase",
+        "phase_session_number",
+        "normalized_phase_day",
+        "epoch_name",
+        "anchor_name",
+        "window_position",
+    ]
+
+    available_metrics = [m for m in metrics if m in encoder_epoch_df.columns]
+
+    session_epoch_df = (
+        encoder_epoch_df
+        .groupby(group_cols, dropna=False)
+        .agg(
+            **{m: (m, "mean") for m in available_metrics},
+            n_windows=("epoch_name", "count"),
+        )
+        .reset_index()
+    )
+
+    return session_epoch_df
+
+def fit_phase_lmm(
+    df,
+    phase,
+    outcome,
+    include_day=True,
+):
+    """
+    Fit mixed model within one phase.
+
+    Model:
+        outcome ~ anchor_name * window_position + normalized_phase_day + (1|animal)
+    """
+
+    sub = df[df["phase"] == phase].copy()
+
+    sub = sub[
+        np.isfinite(sub[outcome])
+    ].copy()
+
+    if include_day:
+        formula = f"{outcome} ~ C(anchor_name) * C(window_position) + normalized_phase_day"
+    else:
+        formula = f"{outcome} ~ C(anchor_name) * C(window_position)"
+
+    model = smf.mixedlm(
+        formula,
+        data=sub,
+        groups=sub["animal"]
+    )
+
+    result = model.fit(method="lbfgs")
+
+    return result
+
+
+
+def make_prepost_delta_table(session_epoch_df, outcome):
+    """
+    Create delta table:
+        delta = post - pre
+    for each animal/date/phase/anchor_name.
+    """
+
+    id_cols = [
+        "animal",
+        "date",
+        "phase",
+        "phase_session_number",
+        "normalized_phase_day",
+        "anchor_name",
+    ]
+
+    pivot = session_epoch_df.pivot_table(
+        index=id_cols,
+        columns="window_position",
+        values=outcome,
+        aggfunc="mean"
+    ).reset_index()
+
+    if "pre" not in pivot.columns or "post" not in pivot.columns:
+        raise ValueError("Both pre and post windows are required.")
+
+    pivot[f"delta_{outcome}"] = pivot["post"] - pivot["pre"]
+
+    return pivot
+
+
+
+def fit_delta_lmm(delta_df, phase, outcome):
+    """
+    Fit LMM on post-pre delta within one phase.
+    """
+
+    delta_col = f"delta_{outcome}"
+
+    sub = delta_df[
+        (delta_df["phase"] == phase) &
+        (np.isfinite(delta_df[delta_col]))
+    ].copy()
+
+    formula = f"{delta_col} ~ C(anchor_name) + normalized_phase_day"
+
+    model = smf.mixedlm(
+        formula,
+        data=sub,
+        groups=sub["animal"]
+    )
+
+    result = model.fit(method="lbfgs")
+
+    return result
+
+
+import numpy as np
+import pandas as pd
+from scipy.stats import ttest_1samp, ttest_rel, wilcoxon
+
+
+def animal_level_delta_summary(delta_df, phase, outcome):
+    """
+    Average post-pre delta within each animal and anchor.
+    """
+
+    delta_col = f"delta_{outcome}"
+
+    sub = delta_df[
+        (delta_df["phase"] == phase) &
+        (np.isfinite(delta_df[delta_col]))
+    ].copy()
+
+    animal_summary = (
+        sub
+        .groupby(["animal", "anchor_name"], as_index=False)
+        .agg(
+            mean_delta=(delta_col, "mean"),
+            median_delta=(delta_col, "median"),
+            n_sessions=(delta_col, "count")
+        )
+    )
+
+    return animal_summary
+
+
+def test_animal_level_deltas(animal_summary):
+    """
+    Test each anchor against zero at the animal level.
+    """
+
+    rows = []
+
+    for anchor, sub in animal_summary.groupby("anchor_name"):
+        vals = sub["mean_delta"].dropna().values
+
+        if len(vals) < 2:
+            continue
+
+        t_res = ttest_1samp(vals, 0)
+
+        try:
+            w_res = wilcoxon(vals)
+            w_p = w_res.pvalue
+        except Exception:
+            w_p = np.nan
+
+        rows.append({
+            "anchor_name": anchor,
+            "n_animals": len(vals),
+            "mean_delta": np.mean(vals),
+            "sem_delta": np.std(vals, ddof=1) / np.sqrt(len(vals)),
+            "median_delta": np.median(vals),
+            "t_stat_vs_0": t_res.statistic,
+            "p_ttest_vs_0": t_res.pvalue,
+            "p_wilcoxon_vs_0": w_p
+        })
+
+    return pd.DataFrame(rows)
+
+
+def paired_anchor_comparison(animal_summary, anchor_a, anchor_b):
+    """
+    Paired comparison between two anchors at the animal level.
+    """
+
+    wide = animal_summary.pivot(
+        index="animal",
+        columns="anchor_name",
+        values="mean_delta"
+    )
+
+    vals_a = wide[anchor_a]
+    vals_b = wide[anchor_b]
+
+    valid = vals_a.notna() & vals_b.notna()
+
+    vals_a = vals_a[valid]
+    vals_b = vals_b[valid]
+
+    t_res = ttest_rel(vals_a, vals_b)
+
+    try:
+        w_res = wilcoxon(vals_a, vals_b)
+        w_p = w_res.pvalue
+    except Exception:
+        w_p = np.nan
+
+    return {
+        "anchor_a": anchor_a,
+        "anchor_b": anchor_b,
+        "n_animals": valid.sum(),
+        "mean_delta_a": vals_a.mean(),
+        "mean_delta_b": vals_b.mean(),
+        "mean_difference_a_minus_b": (vals_a - vals_b).mean(),
+        "p_paired_ttest": t_res.pvalue,
+        "p_wilcoxon": w_p,
+        "wide_table": wide
+    }
+
+import numpy as np
+import pandas as pd
+from statsmodels.stats.anova import AnovaRM
+
+
+def make_animal_condition_table(session_epoch_df, phase, outcome):
+    """
+    Average values across sessions for each animal × anchor × pre/post condition.
+
+    This creates one value per animal per repeated-measures condition.
+    """
+
+    sub = session_epoch_df[
+        (session_epoch_df["phase"] == phase) &
+        (np.isfinite(session_epoch_df[outcome]))
+    ].copy()
+
+    animal_cond = (
+        sub
+        .groupby(["animal", "anchor_name", "window_position"], as_index=False)
+        .agg(
+            value=(outcome, "mean"),
+            n_sessions=(outcome, "count")
+        )
+    )
+
+    return animal_cond
+
+
+def run_2way_rm_anova(session_epoch_df, phase, outcome):
+    """
+    Run 2-way repeated-measures ANOVA:
+        outcome ~ anchor_name × window_position
+    with animal as subject.
+    """
+
+    animal_cond = make_animal_condition_table(
+        session_epoch_df,
+        phase=phase,
+        outcome=outcome
+    )
+
+    # Keep only animals with complete data for all conditions
+    n_conditions = (
+        animal_cond[["anchor_name", "window_position"]]
+        .drop_duplicates()
+        .shape[0]
+    )
+
+    complete_animals = (
+        animal_cond
+        .groupby("animal")
+        .filter(lambda x: len(x) == n_conditions)
+        ["animal"]
+        .unique()
+    )
+
+    animal_cond = animal_cond[
+        animal_cond["animal"].isin(complete_animals)
+    ].copy()
+
+    aov = AnovaRM(
+        data=animal_cond,
+        depvar="value",
+        subject="animal",
+        within=["anchor_name", "window_position"]
+    ).fit()
+
+    return aov, animal_cond
+
+
+from statsmodels.stats.anova import AnovaRM
+
+
+def run_delta_rm_anova(delta_df, phase, outcome):
+    """
+    Run one-way repeated-measures ANOVA on post-pre deltas.
+
+    Repeated factor:
+        anchor_name
+    Subject:
+        animal
+    """
+
+    delta_col = f"delta_{outcome}"
+
+    sub = delta_df[
+        (delta_df["phase"] == phase) &
+        (np.isfinite(delta_df[delta_col]))
+    ].copy()
+
+    animal_delta = (
+        sub
+        .groupby(["animal", "anchor_name"], as_index=False)
+        .agg(
+            value=(delta_col, "mean"),
+            n_sessions=(delta_col, "count")
+        )
+    )
+
+    # keep only complete animals
+    n_conditions = animal_delta["anchor_name"].nunique()
+
+    complete_animals = (
+        animal_delta
+        .groupby("animal")
+        .filter(lambda x: len(x) == n_conditions)
+        ["animal"]
+        .unique()
+    )
+
+    animal_delta = animal_delta[
+        animal_delta["animal"].isin(complete_animals)
+    ].copy()
+
+    aov = AnovaRM(
+        data=animal_delta,
+        depvar="value",
+        subject="animal",
+        within=["anchor_name"]
+    ).fit()
+
+    return aov, animal_delta
+
+
+
+def add_day_bin(df, n_bins=3):
+    """
+    Add early/middle/late or early/late bins based on normalized_phase_day.
+    """
+
+    df = df.copy()
+
+    if n_bins == 2:
+        df["day_bin"] = pd.cut(
+            df["normalized_phase_day"],
+            bins=[-0.001, 0.5, 1.001],
+            labels=["early", "late"]
+        )
+
+    elif n_bins == 3:
+        df["day_bin"] = pd.cut(
+            df["normalized_phase_day"],
+            bins=[-0.001, 1/3, 2/3, 1.001],
+            labels=["early", "middle", "late"]
+        )
+
+    else:
+        raise ValueError("Use n_bins=2 or n_bins=3.")
+
+    df["day_bin"] = df["day_bin"].astype(str)
+
+    return df
+
+
+def run_3way_rm_anova_with_day(session_epoch_df, phase, outcome):
+    """
+    Repeated-measures ANOVA on raw pre/post values.
+
+    Within-subject factors:
+        anchor_name
+        window_position
+        day_bin
+    """
+
+    sub = session_epoch_df[
+        (session_epoch_df["phase"] == phase) &
+        (np.isfinite(session_epoch_df[outcome]))
+    ].copy()
+
+    animal_cond = (
+        sub
+        .groupby(["animal", "day_bin", "anchor_name", "window_position"], as_index=False)
+        .agg(
+            value=(outcome, "mean"),
+            n_sessions=(outcome, "count")
+        )
+    )
+
+    n_conditions = (
+        animal_cond[["day_bin", "anchor_name", "window_position"]]
+        .drop_duplicates()
+        .shape[0]
+    )
+
+    complete_animals = (
+        animal_cond
+        .groupby("animal")
+        .filter(lambda x: len(x) == n_conditions)
+        ["animal"]
+        .unique()
+    )
+
+    animal_cond = animal_cond[
+        animal_cond["animal"].isin(complete_animals)
+    ].copy()
+
+    aov = AnovaRM(
+        data=animal_cond,
+        depvar="value",
+        subject="animal",
+        within=["anchor_name", "window_position", "day_bin"]
+    ).fit()
+
+    return aov, animal_cond
+
+
+from statsmodels.stats.anova import AnovaRM
+import numpy as np
+import pandas as pd
+
+
+def run_anchor_specific_rm_anova(session_epoch_df, phase, anchor_name, outcome):
+    """
+    Repeated-measures ANOVA for one event anchor.
+
+    Model:
+        outcome ~ window_position × day_bin
+
+    Subject:
+        animal
+    """
+
+    sub = session_epoch_df[
+        (session_epoch_df["phase"] == phase) &
+        (session_epoch_df["anchor_name"] == anchor_name) &
+        (np.isfinite(session_epoch_df[outcome]))
+    ].copy()
+
+    animal_cond = (
+        sub
+        .groupby(["animal", "day_bin", "window_position"], as_index=False)
+        .agg(
+            value=(outcome, "mean"),
+            n_sessions=(outcome, "count")
+        )
+    )
+
+    # Keep only animals with complete repeated-measures conditions
+    n_conditions = (
+        animal_cond[["day_bin", "window_position"]]
+        .drop_duplicates()
+        .shape[0]
+    )
+
+    complete_animals = (
+        animal_cond
+        .groupby("animal")
+        .filter(lambda x: len(x) == n_conditions)
+        ["animal"]
+        .unique()
+    )
+
+    animal_cond = animal_cond[
+        animal_cond["animal"].isin(complete_animals)
+    ].copy()
+
+    aov = AnovaRM(
+        data=animal_cond,
+        depvar="value",
+        subject="animal",
+        within=["window_position", "day_bin"]
+    ).fit()
+
+    return aov, animal_cond
+
+
+def run_anchor_delta_day_rm_anova(delta_df, phase, anchor_name, outcome):
+    """
+    For one anchor, run repeated-measures ANOVA on delta values across day_bin.
+
+    Model:
+        delta ~ day_bin
+
+    Subject:
+        animal
+    """
+
+    delta_col = f"delta_{outcome}"
+
+    sub = delta_df[
+        (delta_df["phase"] == phase) &
+        (delta_df["anchor_name"] == anchor_name) &
+        (np.isfinite(delta_df[delta_col]))
+    ].copy()
+
+    animal_day = (
+        sub
+        .groupby(["animal", "day_bin"], as_index=False)
+        .agg(
+            value=(delta_col, "mean"),
+            n_sessions=(delta_col, "count")
+        )
+    )
+
+    n_conditions = animal_day["day_bin"].nunique()
+
+    complete_animals = (
+        animal_day
+        .groupby("animal")
+        .filter(lambda x: len(x) == n_conditions)
+        ["animal"]
+        .unique()
+    )
+
+    animal_day = animal_day[
+        animal_day["animal"].isin(complete_animals)
+    ].copy()
+
+    aov = AnovaRM(
+        data=animal_day,
+        depvar="value",
+        subject="animal",
+        within=["day_bin"]
+    ).fit()
+
+    return aov, animal_day
