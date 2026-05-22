@@ -976,7 +976,9 @@ def compute_encoder_metrics_for_windows(
 
 def make_session_epoch_summary(encoder_epoch_df):
     """
-    Average window metrics within each animal/date/phase/epoch_name.
+    Average window metrics within each animal/date/phase/anchor/window_position/session_time_bin.
+
+    One output row = one animal/session/anchor/pre-post/time-bin summary.
     """
 
     metrics = [
@@ -985,6 +987,8 @@ def make_session_epoch_summary(encoder_epoch_df):
         "peak_speed_path_cms",
         "mean_speed_net_cms",
         "median_speed_net_cms",
+        "min_speed_net_cms",
+        "max_speed_net_cms",
         "distance_path_cm",
         "distance_net_cm",
         "frac_stationary",
@@ -995,18 +999,29 @@ def make_session_epoch_summary(encoder_epoch_df):
         "net_direction_bias",
     ]
 
-    group_cols = [
+    desired_group_cols = [
         "animal",
         "date",
         "phase",
         "phase_session_number",
         "normalized_phase_day",
-        "epoch_name",
+        "session_time_bin",
         "anchor_name",
+        "anchor_type",
         "window_position",
+        "window_s",
+        "epoch_name",
     ]
 
-    available_metrics = [m for m in metrics if m in encoder_epoch_df.columns]
+    group_cols = [
+        c for c in desired_group_cols
+        if c in encoder_epoch_df.columns
+    ]
+
+    available_metrics = [
+        m for m in metrics
+        if m in encoder_epoch_df.columns
+    ]
 
     session_epoch_df = (
         encoder_epoch_df
@@ -1014,11 +1029,14 @@ def make_session_epoch_summary(encoder_epoch_df):
         .agg(
             **{m: (m, "mean") for m in available_metrics},
             n_windows=("epoch_name", "count"),
+            n_events=("event_number", "nunique"),
         )
         .reset_index()
     )
 
     return session_epoch_df
+
+
 
 def fit_phase_lmm(
     df,
