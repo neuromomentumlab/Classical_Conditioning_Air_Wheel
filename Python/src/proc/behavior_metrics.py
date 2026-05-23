@@ -1552,3 +1552,96 @@ def run_anchor_delta_day_rm_anova(delta_df, phase, anchor_name, outcome):
     ).fit()
 
     return aov, animal_day
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+def compute_whole_session_locomotor_metrics(
+    session_day_df,
+    phase="habituation",
+    speed_thresh=0.5,
+    good_sessions_only=True,
+):
+    """
+    Compute whole-session locomotor metrics for each animal/date/phase.
+
+    One row = one animal/session.
+    """
+
+    rows = []
+
+    df = session_day_df[session_day_df["phase"] == phase].copy()
+
+    if good_sessions_only and "good_session_basic" in df.columns:
+        df = df[df["good_session_basic"] == True].copy()
+
+    for _, sess in df.iterrows():
+
+        animal = sess["animal"]
+        date = sess["date"]
+
+        try:
+            b = pdio.load_behavior_h5(
+                animal,
+                date,
+                keys=[
+                    "speed_path_cms",
+                    "speed_net_cms",
+                    "fs",
+                    "dist_path_cm",
+                    "dist_net_cm",
+                ]
+            )
+
+            speed_path = np.asarray(b["speed_path_cms"]).reshape(-1)
+            speed_net = np.asarray(b["speed_net_cms"]).reshape(-1)
+            fs = float(np.asarray(b["fs"]).squeeze())
+
+            n = min(len(speed_path), len(speed_net))
+            speed_path = speed_path[:n]
+            speed_net = speed_net[:n]
+
+            state_metrics = summarize_locomotor_state_in_window(
+                speed_path,
+                speed_net,
+                speed_thresh=speed_thresh
+            )
+
+            duration_s = n / fs
+
+            row = {
+                **sess.to_dict(),
+
+                "speed_thresh_cms": speed_thresh,
+                "fs": fs,
+                "n_samples_used": n,
+                "duration_s_used": duration_s,
+
+                "mean_speed_path_cms": np.nanmean(speed_path),
+                "median_speed_path_cms": np.nanmedian(speed_path),
+                "peak_speed_path_cms": np.nanmax(speed_path),
+
+                "mean_speed_net_cms": np.nanmean(speed_net),
+                "median_speed_net_cms": np.nanmedian(speed_net),
+                "min_speed_net_cms": np.nanmin(speed_net),
+                "max_speed_net_cms": np.nanmax(speed_net),
+
+                **state_metrics,
+            }
+
+            rows.append(row)
+
+        except Exception as e:
+            print(f"[ERROR] {animal} {date}: {e}")
+
+    out = pd.DataFrame(rows)
+
+    if not out.empty:
+        out = out.sort_values(
+            ["animal", "phase_day_number_good", "date"]
+        ).reset_index(drop=True)
+
+    return out
