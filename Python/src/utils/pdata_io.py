@@ -360,3 +360,33 @@ def load_project_context(
         project_context["pdata_root"],
         project_context["cc_data"],
     )
+
+def clean_df_for_hdf(df):
+    """
+    Clean dataframe before saving to HDF5.
+    Converts mixed object columns to safe types.
+    """
+
+    df = df.copy()
+
+    bool_cols = [
+        "valid_pair",
+        "edge_excluded",
+        "short_led",
+        "tone_structure_bad",
+        "short_recording",
+        "short_session_excluded",
+        "valid_for_epoch_extraction",
+    ]
+
+    for col in bool_cols:
+        if col in df.columns:
+            df[col] = df[col].fillna(False).astype(bool)
+
+    # Convert remaining object columns to strings
+    object_cols = df.select_dtypes(include=["object"]).columns
+
+    for col in object_cols:
+        df[col] = df[col].fillna("").astype(str)
+
+    return df
