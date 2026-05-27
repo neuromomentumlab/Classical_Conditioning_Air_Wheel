@@ -173,6 +173,15 @@ def build_prepost_epoch_windows(
         event_number = ev["event_number"]
 
         fs = ev.get("fs", np.nan)
+        # pull from event row
+        rig_session_start_min = ev.get("rig_session_start_min", np.nan)
+        phase_session_start_min = ev.get("phase_session_start_min", np.nan)
+        recording_duration_min = ev.get("recording_duration_min", np.nan)
+        good_session_basic = ev.get("good_session_basic", np.nan)
+        rig_session_number = ev.get("rig_session_number", np.nan)
+        phase_session_number = ev.get("phase_session_number", np.nan)
+        rig_day_from_date = ev.get("rig_day_from_date", np.nan)
+        phase_day_from_date = ev.get("phase_day_from_date", np.nan)
 
         if "n_samples" in ev:
             n_samples = ev.get("n_samples", np.nan)
@@ -433,6 +442,31 @@ def build_prepost_epoch_windows(
 
                     "anchor_warning": anchor_warning,
                     "invalid_reason": invalid_reason,
+
+                    "good_session_basic": good_session_basic,
+
+                    "rig_day_from_date": rig_day_from_date,
+                    "rig_session_number": rig_session_number,
+                    "phase_day_from_date": phase_day_from_date,
+                    "phase_session_number": phase_session_number,
+
+                    "rig_session_start_min": rig_session_start_min,
+                    "phase_session_start_min": phase_session_start_min,
+                    "recording_duration_min": recording_duration_min,
+
+                    "anchor_session_time_min": anchor_time / 60.0 if np.isfinite(anchor_time) else np.nan,
+
+                    "anchor_rig_time_min": (
+                        rig_session_start_min + anchor_time / 60.0
+                        if np.isfinite(rig_session_start_min) and np.isfinite(anchor_time)
+                        else np.nan
+                    ),
+
+                    "anchor_phase_time_min": (
+                        phase_session_start_min + anchor_time / 60.0
+                        if np.isfinite(phase_session_start_min) and np.isfinite(anchor_time)
+                        else np.nan
+                    ),
                 })
 
     windows_df = pd.DataFrame(rows)

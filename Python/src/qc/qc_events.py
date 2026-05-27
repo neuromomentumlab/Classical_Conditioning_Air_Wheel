@@ -77,7 +77,8 @@ def build_event_qc_table(
             phase_filter = {phase_filter}
         else:
             phase_filter = set(phase_filter)
-
+    drop_first = 0 if drop_first_n is None else int(drop_first_n)
+    drop_last = 0 if drop_last_n is None else int(drop_last_n)
     event_rows = []
     session_rows = []
 
@@ -161,8 +162,8 @@ def build_event_qc_table(
                     )
 
                     edge_excluded = (
-                        i < drop_first_n
-                        or i >= (n_pairs - drop_last_n)
+                        i < drop_first
+                        or i >= (n_pairs - drop_last)
                     )
 
                     short_led = False
@@ -179,7 +180,11 @@ def build_event_qc_table(
                         n_edge_excluded += 1
 
                     if phase == "habituation":
-                        if np.isfinite(on_duration_s) and on_duration_s < min_hab_led_on_s:
+                        if (
+                            min_hab_led_on_s is not None
+                            and np.isfinite(on_duration_s)
+                            and on_duration_s < min_hab_led_on_s
+                        ):
                             short_led = True
                             discard_reasons.append(
                                 f"short_LED_ON_duration_{on_duration_s:.2f}s"
@@ -382,7 +387,8 @@ def build_event_qc_table(
         session_summary_df = session_summary_df.sort_values(
             ["phase", "animal", "date_dt", "date"]
         ).reset_index(drop=True)
-
+    events_df, session_summary_df = fill_session_duration_from_events(events_df, session_summary_df)
+    events_df, session_summary_df = add_exposure_time_columns(events_df, session_summary_df)
     return events_df, session_summary_df
 
 
@@ -439,8 +445,224 @@ def load_behavior_qc_tables(
 
     events_df = pd.read_hdf(qc_file, key="event_qc/events")
     session_summary_df = pd.read_hdf(qc_file, key="event_qc/session_summary")
-    windows_df = pd.read_hdf(qc_file, key="epoch_windows/windows_1s")
+    # windows_df = pd.read_hdf(qc_file, key="epoch_windows/windows_1s")
 
     print(f"[LOADED] Behavior QC tables: {qc_file}")
+    return events_df, session_summary_df
 
-    return events_df, session_summary_df, windows_df
+import numpy as np
+import pandas as pd
+
+
+def add_exposure_time_columns(events_df, session_summary_df):
+    """
+    Add cumulative rig-level, phase-level, and session-level time variables.
+
+    Session-level columns:
+        rig_session_start_s/min
+        phase_session_start_s/min
+        rig_session_number
+        phase_session_number
+
+    Event-level columns:
+        session_time_s/min
+        rig_exposure_time_s/min
+        phase_exposure_time_s/min
+    """
+
+    events_df = events_df.copy()
+    session_summary_df = session_summary_df.copy()
+
+    # --------------------------------------------------
+    # Clean / parse date
+    # --------------------------------------------------
+    session_summary_df["date_dt"] = pd.to_datetime(
+        session_summary_df["date"].astype(str).str.replace("_", "-"),
+        errors="coerce"
+    )
+
+    session_summary_df["recording_duration_s"] = pd.to_numeric(
+        session_summary_df["recording_duration_s"],
+        errors="coerce"
+    )
+
+    session_summary_df["recording_duration_min"] = (
+        session_summary_df["recording_duration_s"] / 60.0
+    )
+
+    # Use 0 for cumulative-sum purposes if duration is missing
+    session_summary_df["_duration_for_cumsum"] = (
+        session_summary_df["recording_duration_s"].fillna(0)
+    )
+
+    session_summary_df = session_summary_df.sort_values(
+        ["animal", "date_dt", "date"]
+    ).reset_index(drop=True)
+
+    # --------------------------------------------------
+    # Rig/session numbering and cumulative rig exposure
+    # --------------------------------------------------
+    session_summary_df["rig_session_number"] = (
+        session_summary_df
+        .groupby("animal")
+        .cumcount() + 1
+    )
+
+    session_summary_df["rig_session_start_s"] = (
+        session_summary_df
+        .groupby("animal")["_duration_for_cumsum"]
+        .cumsum()
+        - session_summary_df["_duration_for_cumsum"]
+    )
+
+    session_summary_df["rig_session_start_min"] = (
+        session_summary_df["rig_session_start_s"] / 60.0
+    )
+
+    # --------------------------------------------------
+    # Phase/session numbering and cumulative phase exposure
+    # --------------------------------------------------
+    session_summary_df["phase_session_number"] = (
+        session_summary_df
+        .groupby(["animal", "phase"])
+        .cumcount() + 1
+    )
+
+    session_summary_df["phase_session_start_s"] = (
+        session_summary_df
+        .groupby(["animal", "phase"])["_duration_for_cumsum"]
+        .cumsum()
+        - session_summary_df["_duration_for_cumsum"]
+    )
+
+    session_summary_df["phase_session_start_min"] = (
+        session_summary_df["phase_session_start_s"] / 60.0
+    )
+
+    # --------------------------------------------------
+    # Optional calendar-day counters
+    # --------------------------------------------------
+    first_rig_date = (
+        session_summary_df
+        .groupby("animal")["date_dt"]
+        .transform("min")
+    )
+
+    session_summary_df["rig_calendar_day"] = (
+        session_summary_df["date_dt"] - first_rig_date
+    ).dt.days + 1
+
+    first_phase_date = (
+        session_summary_df
+        .groupby(["animal", "phase"])["date_dt"]
+        .transform("min")
+    )
+
+    session_summary_df["phase_calendar_day"] = (
+        session_summary_df["date_dt"] - first_phase_date
+    ).dt.days + 1
+
+    session_summary_df = session_summary_df.drop(
+        columns=["_duration_for_cumsum"],
+        errors="ignore"
+    )
+
+    # --------------------------------------------------
+    # Merge session-level timing columns into events_df
+    # --------------------------------------------------
+    merge_cols = [
+        "animal",
+        "date",
+        "phase",
+        "date_dt",
+
+        "recording_duration_s",
+
+        "rig_calendar_day",
+        "rig_session_number",
+        "rig_session_start_s",
+        "rig_session_start_min",
+
+        "phase_calendar_day",
+        "phase_session_number",
+        "phase_session_start_s",
+        "phase_session_start_min",
+    ]
+
+    # Drop old versions from events_df before merge to avoid _x/_y columns
+    events_df = events_df.drop(
+        columns=[c for c in merge_cols if c in events_df.columns and c not in ["animal", "date", "phase"]],
+        errors="ignore"
+    )
+
+    events_df = events_df.merge(
+        session_summary_df[merge_cols],
+        on=["animal", "date", "phase"],
+        how="left",
+        validate="many_to_one"
+    )
+
+    # --------------------------------------------------
+    # Event-level time axes
+    # --------------------------------------------------
+    events_df["session_time_s"] = events_df["on_time_s"]
+    events_df["session_time_min"] = events_df["session_time_s"] / 60.0
+
+    events_df["rig_exposure_time_s"] = (
+        events_df["rig_session_start_s"] + events_df["session_time_s"]
+    )
+    events_df["rig_exposure_time_min"] = (
+        events_df["rig_exposure_time_s"] / 60.0
+    )
+
+    events_df["phase_exposure_time_s"] = (
+        events_df["phase_session_start_s"] + events_df["session_time_s"]
+    )
+    events_df["phase_exposure_time_min"] = (
+        events_df["phase_exposure_time_s"] / 60.0
+    )
+
+    return events_df, session_summary_df
+
+def fill_session_duration_from_events(events_df, session_summary_df):
+    """
+    Fill missing session recording_duration_s in session_summary_df
+    using event-level recording_duration_s.
+    """
+
+    events_df = events_df.copy()
+    session_summary_df = session_summary_df.copy()
+
+    # If session_summary_df does not have the column, create it
+    if "recording_duration_s" not in session_summary_df.columns:
+        session_summary_df["recording_duration_s"] = np.nan
+
+    # Get one duration per animal/date/phase from events_df
+    if "recording_duration_s" in events_df.columns:
+        duration_from_events = (
+            events_df
+            .groupby(["animal", "date", "phase"], dropna=False)
+            .agg(
+                recording_duration_s_from_events=("recording_duration_s", "median")
+            )
+            .reset_index()
+        )
+
+        session_summary_df = session_summary_df.merge(
+            duration_from_events,
+            on=["animal", "date", "phase"],
+            how="left",
+            validate="one_to_one"
+        )
+
+        session_summary_df["recording_duration_s"] = (
+            session_summary_df["recording_duration_s"]
+            .fillna(session_summary_df["recording_duration_s_from_events"])
+        )
+
+        session_summary_df = session_summary_df.drop(
+            columns=["recording_duration_s_from_events"],
+            errors="ignore"
+        )
+
+    return events_df, session_summary_df

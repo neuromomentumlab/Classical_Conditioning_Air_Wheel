@@ -335,3 +335,260 @@ def summarize_epoch_matrix(
     )
 
     return summary_df
+
+import numpy as np
+import pandas as pd
+
+
+def make_anchor_window_table(
+    encoder_epoch_df,
+    phase=None,
+    anchor_name=None,
+    metrics=None,
+    return_type="wide",   # "wide", "delta", "pre", "post", or "long"
+    keep_overlap=True,
+    require_good_session=True,
+    require_valid_window=True,
+):
+    """
+    General function to extract pre, post, or post-pre delta values
+    for any anchor and phase.
+
+    One row in wide/delta output =
+        animal × date × event_number × anchor_name
+
+    Parameters
+    ----------
+    encoder_epoch_df : pandas.DataFrame
+        Epoch-level metrics table.
+
+    phase : str, list, or None
+        Phase(s) to include.
+        Example: "tone_air_training" or ["air_training", "tone_air_training"].
+        If None, use all phases.
+
+    anchor_name : str, list, or None
+        Anchor(s) to include.
+        Example: "tone_on" or ["tone_on", "air_on"].
+        If None, use all anchors.
+
+    metrics : list or None
+        Metrics to extract. If None, uses common encoder metrics.
+
+    return_type : str
+        "wide"  = includes pre, post, and delta columns
+        "delta" = includes only delta columns
+        "pre"   = returns only pre rows in long format
+        "post"  = returns only post rows in long format
+        "long"  = returns filtered long table without pivoting
+
+    keep_overlap : bool
+        If False, removes rows with overlap_flag == True.
+
+    require_good_session : bool
+        If True, keeps only good_session_basic == True.
+
+    require_valid_window : bool
+        If True, keeps only valid_window == True.
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
+
+    df = encoder_epoch_df.copy()
+
+    # --------------------------------------------------
+    # Phase filter
+    # --------------------------------------------------
+    if phase is not None:
+        if isinstance(phase, str):
+            phase = [phase]
+        df = df[df["phase"].isin(phase)].copy()
+
+    # --------------------------------------------------
+    # Anchor filter
+    # --------------------------------------------------
+    if anchor_name is not None:
+        if isinstance(anchor_name, str):
+            anchor_name = [anchor_name]
+        df = df[df["anchor_name"].isin(anchor_name)].copy()
+
+    # --------------------------------------------------
+    # Window filter
+    # --------------------------------------------------
+    df = df[df["window_position"].isin(["pre", "post"])].copy()
+
+    if require_good_session and "good_session_basic" in df.columns:
+        df = df[df["good_session_basic"] == True].copy()
+
+    if require_valid_window and "valid_window" in df.columns:
+        df = df[df["valid_window"] == True].copy()
+
+    if not keep_overlap and "overlap_flag" in df.columns:
+        df = df[df["overlap_flag"] == False].copy()
+
+    # --------------------------------------------------
+    # Default metrics
+    # --------------------------------------------------
+    if metrics is None:
+        metrics = [
+            "mean_speed_path_cms",
+            "median_speed_path_cms",
+            "peak_speed_path_cms",
+            "mean_speed_net_cms",
+            "median_speed_net_cms",
+            "distance_path_cm",
+            "distance_net_cm",
+            "frac_stationary",
+            "frac_moving",
+            "frac_forward",
+            "frac_backward",
+            "frac_low_net_movement",
+            "net_direction_bias",
+        ]
+
+    metrics = [m for m in metrics if m in df.columns]
+
+    if len(metrics) == 0:
+        raise ValueError("No requested metrics were found in encoder_epoch_df.")
+
+    # --------------------------------------------------
+    # Return long/pre/post directly if requested
+    # --------------------------------------------------
+    if return_type == "long":
+        return df.reset_index(drop=True)
+
+    if return_type in ["pre", "post"]:
+        return (
+            df[df["window_position"] == return_type]
+            .reset_index(drop=True)
+        )
+
+    # --------------------------------------------------
+    # ID columns for wide/delta table
+    # --------------------------------------------------
+    candidate_id_cols = [
+        "animal",
+        "date",
+        "phase",
+        "event_number",
+        "anchor_name",
+        "anchor_type",
+
+        # calendar/session indices
+        "rig_day_from_date",
+        "rig_session_number",
+        "phase_day_from_date",
+        "phase_session_number",
+
+        # session and exposure timing
+        "rig_session_start_min",
+        "phase_session_start_min",
+        "recording_duration_min",
+        "anchor_time_s",
+        "anchor_session_time_min",
+        "anchor_phase_time_min",
+        "anchor_rig_time_min",
+
+        # QC
+        "good_session_basic",
+        "overlap_flag",
+    ]
+
+    id_cols = [c for c in candidate_id_cols if c in df.columns]
+
+    # --------------------------------------------------
+    # Pivot pre/post into columns
+    # --------------------------------------------------
+    wide = df.pivot_table(
+        index=id_cols,
+        columns="window_position",
+        values=metrics,
+        aggfunc="mean",
+    )
+
+    wide.columns = [
+        f"{metric}_{position}"
+        for metric, position in wide.columns
+    ]
+
+    wide = wide.reset_index()
+
+    # --------------------------------------------------
+    # Add deltas
+    # --------------------------------------------------
+    for metric in metrics:
+        pre_col = f"{metric}_pre"
+        post_col = f"{metric}_post"
+
+        if pre_col in wide.columns and post_col in wide.columns:
+            wide[f"delta_{metric}"] = wide[post_col] - wide[pre_col]
+            # wide[f"delta_{metric"] = wide[post_col] - wide[pre_col]
+
+    # --------------------------------------------------
+    # Add useful LME time variables
+    # --------------------------------------------------
+    if "phase_session_start_min" in wide.columns:
+        wide["phase_prior_exposure_min"] = wide["phase_session_start_min"]
+
+    if "rig_session_start_min" in wide.columns:
+        wide["rig_prior_exposure_min"] = wide["rig_session_start_min"]
+
+    if "anchor_session_time_min" in wide.columns:
+        wide["session_time_min"] = wide["anchor_session_time_min"]
+
+    # Scaled/centered variables for LME
+    if "phase_prior_exposure_min" in wide.columns:
+        wide["phase_prior_100m_c"] = (
+            wide["phase_prior_exposure_min"]
+            - wide["phase_prior_exposure_min"].mean()
+        ) / 100.0
+
+    if "rig_prior_exposure_min" in wide.columns:
+        wide["rig_prior_100m_c"] = (
+            wide["rig_prior_exposure_min"]
+            - wide["rig_prior_exposure_min"].mean()
+        ) / 100.0
+
+    if "session_time_min" in wide.columns:
+        wide["session_10m_c"] = (
+            wide["session_time_min"]
+            - wide["session_time_min"].mean()
+        ) / 10.0
+
+    # Animal-day/session ID for LME
+    wide["animal_day"] = (
+        wide["animal"].astype(str) + ":" + wide["date"].astype(str)
+    )
+
+    # --------------------------------------------------
+    # Return requested format
+    # --------------------------------------------------
+    if return_type == "wide":
+        return wide.reset_index(drop=True)
+
+    if return_type == "delta":
+        delta_cols = [c for c in wide.columns if c.startswith("delta_")]
+
+        keep_cols = [
+            c for c in wide.columns
+            if (
+                c in id_cols
+                or c in [
+                    "animal_day",
+                    "phase_prior_exposure_min",
+                    "rig_prior_exposure_min",
+                    "session_time_min",
+                    "phase_prior_100m_c",
+                    "rig_prior_100m_c",
+                    "session_10m_c",
+                ]
+            )
+        ]
+
+        return wide[keep_cols + delta_cols].reset_index(drop=True)
+
+    raise ValueError(
+        "return_type must be one of: 'wide', 'delta', 'pre', 'post', 'long'"
+    )

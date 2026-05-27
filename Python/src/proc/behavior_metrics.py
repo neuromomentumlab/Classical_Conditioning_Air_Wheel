@@ -1569,6 +1569,9 @@ def compute_whole_session_locomotor_metrics(
     Compute whole-session locomotor metrics for each animal/date/phase.
 
     One row = one animal/session.
+
+    This uses the full continuous encoder-derived behavior signal,
+    not event-locked epochs.
     """
 
     rows = []
@@ -1596,21 +1599,57 @@ def compute_whole_session_locomotor_metrics(
                 ]
             )
 
-            speed_path = np.asarray(b["speed_path_cms"]).reshape(-1)
-            speed_net = np.asarray(b["speed_net_cms"]).reshape(-1)
+            speed_path = np.asarray(b["speed_path_cms"]).reshape(-1).astype(float)
+            speed_net = np.asarray(b["speed_net_cms"]).reshape(-1).astype(float)
             fs = float(np.asarray(b["fs"]).squeeze())
 
             n = min(len(speed_path), len(speed_net))
             speed_path = speed_path[:n]
             speed_net = speed_net[:n]
 
+            duration_s = n / fs
+            duration_min = duration_s / 60.0
+
+            # State metrics: frac_forward, frac_stationary, etc.
             state_metrics = summarize_locomotor_state_in_window(
                 speed_path,
                 speed_net,
                 speed_thresh=speed_thresh
             )
 
-            duration_s = n / fs
+            # --------------------------------------------------
+            # Distance metrics
+            # --------------------------------------------------
+            dist_path = np.asarray(b["dist_path_cm"]).reshape(-1).astype(float)
+            dist_net = np.asarray(b["dist_net_cm"]).reshape(-1).astype(float)
+
+            n_dist = min(len(dist_path), len(dist_net), n)
+            dist_path = dist_path[:n_dist]
+            dist_net = dist_net[:n_dist]
+
+            if n_dist > 1:
+                total_distance_path_cm = float(dist_path[-1] - dist_path[0])
+                total_distance_net_cm = float(dist_net[-1] - dist_net[0])
+            else:
+                total_distance_path_cm = np.nan
+                total_distance_net_cm = np.nan
+
+            distance_path_per_min = (
+                total_distance_path_cm / duration_min
+                if duration_min > 0 else np.nan
+            )
+
+            distance_net_per_min = (
+                total_distance_net_cm / duration_min
+                if duration_min > 0 else np.nan
+            )
+
+            net_direction_bias = (
+                total_distance_net_cm / total_distance_path_cm
+                if np.isfinite(total_distance_path_cm)
+                and total_distance_path_cm != 0
+                else np.nan
+            )
 
             row = {
                 **sess.to_dict(),
@@ -1619,6 +1658,13 @@ def compute_whole_session_locomotor_metrics(
                 "fs": fs,
                 "n_samples_used": n,
                 "duration_s_used": duration_s,
+                "duration_min_used": duration_min,
+
+                "total_distance_path_cm": total_distance_path_cm,
+                "total_distance_net_cm": total_distance_net_cm,
+                "distance_path_per_min": distance_path_per_min,
+                "distance_net_per_min": distance_net_per_min,
+                "net_direction_bias": net_direction_bias,
 
                 "mean_speed_path_cms": np.nanmean(speed_path),
                 "median_speed_path_cms": np.nanmedian(speed_path),
@@ -1630,6 +1676,8 @@ def compute_whole_session_locomotor_metrics(
                 "max_speed_net_cms": np.nanmax(speed_net),
 
                 **state_metrics,
+
+                "status_whole_session": "ok",
             }
 
             rows.append(row)
@@ -1637,11 +1685,49 @@ def compute_whole_session_locomotor_metrics(
         except Exception as e:
             print(f"[ERROR] {animal} {date}: {e}")
 
+            row = {
+                **sess.to_dict(),
+                "speed_thresh_cms": speed_thresh,
+                "fs": np.nan,
+                "n_samples_used": np.nan,
+                "duration_s_used": np.nan,
+                "duration_min_used": np.nan,
+
+                "total_distance_path_cm": np.nan,
+                "total_distance_net_cm": np.nan,
+                "distance_path_per_min": np.nan,
+                "distance_net_per_min": np.nan,
+                "net_direction_bias": np.nan,
+
+                "mean_speed_path_cms": np.nan,
+                "median_speed_path_cms": np.nan,
+                "peak_speed_path_cms": np.nan,
+
+                "mean_speed_net_cms": np.nan,
+                "median_speed_net_cms": np.nan,
+                "min_speed_net_cms": np.nan,
+                "max_speed_net_cms": np.nan,
+
+                "status_whole_session": f"error: {e}",
+            }
+
+            rows.append(row)
+
     out = pd.DataFrame(rows)
 
     if not out.empty:
-        out = out.sort_values(
-            ["animal", "phase_day_number_good", "date"]
-        ).reset_index(drop=True)
+
+        sort_cols = ["animal"]
+
+        if "phase_day_number_good" in out.columns:
+            sort_cols.append("phase_day_number_good")
+        elif "phase_session_number" in out.columns:
+            sort_cols.append("phase_session_number")
+        elif "phase_day_from_date" in out.columns:
+            sort_cols.append("phase_day_from_date")
+
+        sort_cols.append("date")
+
+        out = out.sort_values(sort_cols).reset_index(drop=True)
 
     return out

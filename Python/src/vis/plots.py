@@ -941,40 +941,40 @@ def plot_hab_summary(summary_df, y_col, sem_col, ylabel, title):
     plt.show()
 
 
-speed_summary = (
-    hab_led_rm_df
-    .groupby(["phase_day_bin", "session_time_bin"], observed=False)
-    .agg(
-        mean_speed=("mean_speed_path_cms", "mean"),
-        sem_speed=("mean_speed_path_cms", lambda x: x.std(ddof=1) / np.sqrt(len(x))),
-        n=("animal", "nunique"),
-    )
-    .reset_index()
-)
+# speed_summary = (
+#     hab_led_rm_df
+#     .groupby(["phase_day_bin", "session_time_bin"], observed=False)
+#     .agg(
+#         mean_speed=("mean_speed_path_cms", "mean"),
+#         sem_speed=("mean_speed_path_cms", lambda x: x.std(ddof=1) / np.sqrt(len(x))),
+#         n=("animal", "nunique"),
+#     )
+#     .reset_index()
+# )
 
-stationary_summary = (
-    hab_led_rm_df
-    .groupby(["phase_day_bin", "session_time_bin"], observed=False)
-    .agg(
-        mean_stationary=("frac_stationary", "mean"),
-        sem_stationary=("frac_stationary", lambda x: x.std(ddof=1) / np.sqrt(len(x))),
-        n=("animal", "nunique"),
-    )
-    .reset_index()
-)
+# stationary_summary = (
+#     hab_led_rm_df
+#     .groupby(["phase_day_bin", "session_time_bin"], observed=False)
+#     .agg(
+#         mean_stationary=("frac_stationary", "mean"),
+#         sem_stationary=("frac_stationary", lambda x: x.std(ddof=1) / np.sqrt(len(x))),
+#         n=("animal", "nunique"),
+#     )
+#     .reset_index()
+# )
 
-plot_hab_summary(
-    speed_summary,
-    y_col="mean_speed",
-    sem_col="sem_speed",
-    ylabel="Mean path speed (cm/s)",
-    title="Speed across habituation"
-)
+# plot_hab_summary(
+#     speed_summary,
+#     y_col="mean_speed",
+#     sem_col="sem_speed",
+#     ylabel="Mean path speed (cm/s)",
+#     title="Speed across habituation"
+# )
 
-plot_hab_summary(
-    stationary_summary,
-    y_col="mean_stationary",
-    sem_col="sem_stationary",
-    ylabel="Stationary fraction",
-    title="Stationary behavior across habituation"
-)
+# plot_hab_summary(
+#     stationary_summary,
+#     y_col="mean_stationary",
+#     sem_col="sem_stationary",
+#     ylabel="Stationary fraction",
+#     title="Stationary behavior across habituation"
+# )
