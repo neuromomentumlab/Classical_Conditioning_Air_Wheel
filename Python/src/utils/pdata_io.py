@@ -390,3 +390,17 @@ def clean_df_for_hdf(df):
         df[col] = df[col].fillna("").astype(str)
 
     return df
+
+
+def save_figure(fig, basename, dpi=600):
+    """
+    Save figure as PDF, SVG, and high-resolution PNG.
+    """
+    fig_dir = Path(PROC_BASE) / "figures"
+    fig_dir.mkdir(parents=True, exist_ok=True)
+
+    # fig.savefig(fig_dir / f"{basename}.pdf", bbox_inches="tight")
+    # fig.savefig(fig_dir / f"{basename}.svg", bbox_inches="tight")
+    fig.savefig(fig_dir / f"{basename}.png", dpi=dpi, bbox_inches="tight")
+
+    print(f"Saved figure to: {fig_dir}")
