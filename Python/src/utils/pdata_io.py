@@ -404,3 +404,102 @@ def save_figure(fig, basename, dpi=600):
     fig.savefig(fig_dir / f"{basename}.png", dpi=dpi, bbox_inches="tight")
 
     print(f"Saved figure to: {fig_dir}")
+
+from pathlib import Path
+from typing import Union, Optional, Dict, Any
+import pandas as pd
+
+
+def save_df_h5(
+    df: pd.DataFrame,
+    h5_path: Union[str, Path],
+    key: str,
+    overwrite: bool = True,
+    format: str = "table",
+    complevel: int = 4,
+    complib: str = "zlib",
+    data_columns: bool = True,
+    metadata: Optional[Dict[str, Any]] = None,
+    verbose: bool = True,
+) -> Path:
+    """
+    Save a pandas DataFrame to an HDF5 file.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to save.
+    h5_path : str or Path
+        Path to the HDF5 file.
+    key : str
+        HDF5 key, for example 'whole_session/habituation'.
+    overwrite : bool
+        If True, overwrite existing key if present.
+    format : str
+        'table' allows querying/appending; 'fixed' is faster but less flexible.
+    complevel : int
+        Compression level, 0-9.
+    complib : str
+        Compression library, e.g. 'zlib', 'blosc'.
+    data_columns : bool
+        Whether columns should be queryable when format='table'.
+    metadata : dict or None
+        Optional metadata saved as HDF5 attributes.
+    verbose : bool
+        Print save information.
+
+    Returns
+    -------
+    Path
+        Path to saved HDF5 file.
+    """
+
+    h5_path = Path(h5_path)
+    h5_path.parent.mkdir(parents=True, exist_ok=True)
+
+    key = key.strip("/")
+    df_to_save = df.copy()
+
+    # Pandas HDF5 can fail with categorical columns in some cases.
+    # Convert categoricals to strings for safer long-term storage.
+    for col in df_to_save.select_dtypes(include=["category"]).columns:
+        df_to_save[col] = df_to_save[col].astype(str)
+
+    mode = "a"
+
+    with pd.HDFStore(
+        h5_path,
+        mode=mode,
+        complevel=complevel,
+        complib=complib,
+    ) as store:
+
+        full_key = f"/{key}"
+
+        if full_key in store.keys():
+            if overwrite:
+                store.remove(key)
+            else:
+                raise KeyError(
+                    f"Key '{key}' already exists in {h5_path}. "
+                    "Use overwrite=True to replace it."
+                )
+
+        store.put(
+            key,
+            df_to_save,
+            format=format,
+            data_columns=data_columns if format == "table" else None,
+        )
+
+        if metadata is not None:
+            storer = store.get_storer(key)
+            for k, v in metadata.items():
+                setattr(storer.attrs, k, v)
+
+    if verbose:
+        print(f"Saved DataFrame: {df_to_save.shape}")
+        print(f"HDF5 file: {h5_path}")
+        print(f"Key: /{key}")
+
+    return h5_path
