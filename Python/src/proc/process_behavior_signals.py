@@ -11,6 +11,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import src.utils.pdata_io as pdio
 
+from scipy.signal import savgol_filter
+
+
 
 @dataclass
 class BehaviorStateConfig:
@@ -926,3 +929,1600 @@ def plot_behavior_state_trial(
     ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left")
     fig.tight_layout()
     return fig, ax
+
+# =============================================================================
+# Kinematic behavioral-state analysis
+# =============================================================================
+
+
+@dataclass
+class KinematicStateConfig:
+    """
+    Configuration for deriving kinematic states from behavior_v1.h5.
+
+    Speed thresholds are in cm/s.
+    Durations are in seconds.
+    """
+
+    # Final analysis sampling rate.
+    analysis_hz: float = 100.0
+
+    # Hysteresis thresholds for detecting locomotor bouts.
+    # These start with the 0.5 cm/s threshold used in the existing manuscript.
+    move_on_cms: float = 0.50
+    move_off_cms: float = 0.25
+
+    # Remove extremely brief events and join short interruptions.
+    min_bout_s: float = 0.10
+    join_bout_gaps_s: float = 0.20
+
+    # Savitzky-Golay smoothing and differentiation.
+    derivative_window_s: float = 0.15
+    derivative_polyorder: int = 3
+
+    # Sustained-running definition within each locomotor bout.
+    sustain_fraction: float = 0.60
+    min_sustain_s: float = 0.20
+    join_sustain_gaps_s: float = 0.10
+
+    # Tone-air protocol:
+    # tone starts 3 s before air onset and ends 2 s after air onset.
+    reconstruct_tone_from_air: bool = True
+    tone_before_air_s: float = 3.0
+    tone_after_air_s: float = 2.0
+
+
+# -----------------------------------------------------------------------------
+# Basic array helpers
+# -----------------------------------------------------------------------------
+
+
+def _find_true_runs(mask):
+    """
+    Find contiguous True intervals.
+
+    Returns
+    -------
+    list of tuple
+        Half-open intervals: [start, end)
+    """
+
+    mask = np.asarray(mask, dtype=bool)
+
+    transitions = np.diff(
+        np.r_[False, mask, False].astype(np.int8)
+    )
+
+    starts = np.flatnonzero(transitions == 1)
+    ends = np.flatnonzero(transitions == -1)
+
+    return [
+        (int(start), int(end))
+        for start, end in zip(starts, ends)
+    ]
+
+
+def _fill_short_false_gaps(mask, maximum_gap_samples):
+    """
+    Fill short False gaps surrounded by True values.
+    """
+
+    output = np.asarray(mask, dtype=bool).copy()
+
+    if maximum_gap_samples <= 0:
+        return output
+
+    for start, end in _find_true_runs(~output):
+
+        is_internal = start > 0 and end < len(output)
+        is_short = (end - start) <= maximum_gap_samples
+
+        if is_internal and is_short:
+            output[start:end] = True
+
+    return output
+
+
+def _remove_short_true_runs(mask, minimum_run_samples):
+    """
+    Remove True intervals shorter than minimum_run_samples.
+    """
+
+    output = np.asarray(mask, dtype=bool).copy()
+
+    for start, end in _find_true_runs(output):
+
+        if (end - start) < minimum_run_samples:
+            output[start:end] = False
+
+    return output
+
+
+def _block_mean(values, block_size, number_of_blocks):
+    """
+    Downsample a continuous variable using nonoverlapping block means.
+    """
+
+    values = np.asarray(values)
+
+    trimmed = values[
+        :number_of_blocks * block_size
+    ]
+
+    return trimmed.reshape(
+        number_of_blocks,
+        block_size,
+    ).mean(axis=1)
+
+
+def _block_last(values, block_size, number_of_blocks):
+    """
+    Downsample a cumulative position/distance variable using
+    the final value in each block.
+    """
+
+    values = np.asarray(values)
+
+    trimmed = values[
+        :number_of_blocks * block_size
+    ]
+
+    return trimmed.reshape(
+        number_of_blocks,
+        block_size,
+    )[:, -1]
+
+
+def _block_binary(values, block_size, number_of_blocks):
+    """
+    Downsample a binary signal using majority occupancy within each block.
+    """
+
+    block_average = _block_mean(
+        values,
+        block_size,
+        number_of_blocks,
+    )
+
+    return (
+        block_average >= 0.5
+    ).astype(np.int8)
+
+
+def _safe_savgol_window(
+    number_of_samples,
+    requested_window_s,
+    analysis_hz,
+    polyorder,
+):
+    """
+    Return a valid odd Savitzky-Golay window length.
+    """
+
+    window = int(
+        round(
+            requested_window_s *
+            analysis_hz
+        )
+    )
+
+    if window % 2 == 0:
+        window += 1
+
+    minimum_window = polyorder + 2
+
+    if minimum_window % 2 == 0:
+        minimum_window += 1
+
+    window = max(
+        window,
+        minimum_window,
+    )
+
+    maximum_window = (
+        number_of_samples
+        if number_of_samples % 2 == 1
+        else number_of_samples - 1
+    )
+
+    window = min(
+        window,
+        maximum_window,
+    )
+
+    if window <= polyorder:
+        raise ValueError(
+            "Recording is too short for the requested "
+            "Savitzky-Golay filter."
+        )
+
+    return window
+
+
+# -----------------------------------------------------------------------------
+# Locomotor-bout detection
+# -----------------------------------------------------------------------------
+
+
+def _hysteresis_movement_mask(
+    speed_path_cms,
+    move_on_cms,
+    move_off_cms,
+):
+    """
+    Detect locomotion using separate onset and offset thresholds.
+
+    Movement starts when speed >= move_on_cms.
+    Movement ends when speed <= move_off_cms.
+    """
+
+    if move_off_cms > move_on_cms:
+        raise ValueError(
+            "move_off_cms must be <= move_on_cms."
+        )
+
+    speed_path_cms = np.asarray(
+        speed_path_cms,
+        dtype=float,
+    )
+
+    moving = np.zeros(
+        len(speed_path_cms),
+        dtype=bool,
+    )
+
+    currently_moving = False
+
+    for index, speed in enumerate(speed_path_cms):
+
+        if (
+            not currently_moving
+            and speed >= move_on_cms
+        ):
+            currently_moving = True
+
+        elif (
+            currently_moving
+            and speed <= move_off_cms
+        ):
+            currently_moving = False
+
+        moving[index] = currently_moving
+
+    return moving
+
+
+def _split_locomotor_bout(
+    speed_path_cms,
+    bout_start,
+    bout_end,
+    state_config,
+):
+    """
+    Split one locomotor bout into:
+
+        initiation
+        sustained
+        deceleration
+
+    Returns
+    -------
+    dict
+        Intervals use [start, end).
+    """
+
+    bout_speed = np.asarray(
+        speed_path_cms[
+            bout_start:bout_end
+        ]
+    )
+
+    if len(bout_speed) == 0:
+        return {
+            "initiation": None,
+            "sustained": None,
+            "deceleration": None,
+            "sustain_threshold_cms": np.nan,
+            "status": "empty_bout",
+        }
+
+    cruise_speed = float(
+        np.percentile(
+            bout_speed,
+            75,
+        )
+    )
+
+    sustain_threshold = max(
+        state_config.move_on_cms,
+        state_config.sustain_fraction *
+        cruise_speed,
+    )
+
+    sustained_mask = (
+        bout_speed >= sustain_threshold
+    )
+
+    sustained_mask = _fill_short_false_gaps(
+        sustained_mask,
+        maximum_gap_samples=max(
+            1,
+            round(
+                state_config.join_sustain_gaps_s *
+                state_config.analysis_hz
+            ),
+        ),
+    )
+
+    sustained_mask = _remove_short_true_runs(
+        sustained_mask,
+        minimum_run_samples=max(
+            1,
+            round(
+                state_config.min_sustain_s *
+                state_config.analysis_hz
+            ),
+        ),
+    )
+
+    sustained_runs = _find_true_runs(
+        sustained_mask
+    )
+
+    # No stable plateau was found.
+    # Divide the bout around its peak speed.
+    if not sustained_runs:
+
+        peak_relative_index = int(
+            np.argmax(
+                bout_speed
+            )
+        )
+
+        split_index = (
+            bout_start +
+            peak_relative_index +
+            1
+        )
+
+        split_index = min(
+            max(
+                split_index,
+                bout_start,
+            ),
+            bout_end,
+        )
+
+        return {
+            "initiation": (
+                bout_start,
+                split_index,
+            ),
+            "sustained": None,
+            "deceleration": (
+                split_index,
+                bout_end,
+            ),
+            "sustain_threshold_cms": (
+                sustain_threshold
+            ),
+            "status": "no_sustained_plateau",
+        }
+
+    sustained_start = (
+        bout_start +
+        sustained_runs[0][0]
+    )
+
+    sustained_end = (
+        bout_start +
+        sustained_runs[-1][1]
+    )
+
+    return {
+        "initiation": (
+            bout_start,
+            sustained_start,
+        ),
+        "sustained": (
+            sustained_start,
+            sustained_end,
+        ),
+        "deceleration": (
+            sustained_end,
+            bout_end,
+        ),
+        "sustain_threshold_cms": (
+            sustain_threshold
+        ),
+        "status": "ok",
+    }
+
+
+# -----------------------------------------------------------------------------
+# Environmental signals
+# -----------------------------------------------------------------------------
+
+
+def _construct_air_from_edges(
+    number_of_blocks,
+    block_size,
+    air_r,
+    air_f,
+):
+    """
+    Construct the downsampled air-on signal from Air_r and Air_f.
+
+    Air_f is treated as the final high sample, so the half-open
+    air interval is [Air_r, Air_f + 1).
+    """
+
+    air_on = np.zeros(
+        number_of_blocks,
+        dtype=np.int8,
+    )
+
+    if air_r is None or air_f is None:
+        return air_on
+
+    air_r = np.asarray(
+        air_r,
+        dtype=np.int64,
+    )
+
+    air_f = np.asarray(
+        air_f,
+        dtype=np.int64,
+    )
+
+    for onset, final_high in zip(
+        air_r,
+        air_f,
+    ):
+
+        start = int(
+            onset // block_size
+        )
+
+        end = int(
+            np.ceil(
+                (final_high + 1) /
+                block_size
+            )
+        )
+
+        start = max(
+            0,
+            min(
+                start,
+                number_of_blocks,
+            ),
+        )
+
+        end = max(
+            start,
+            min(
+                end,
+                number_of_blocks,
+            ),
+        )
+
+        air_on[start:end] = 1
+
+    return air_on
+
+
+def _construct_cycle_id(
+    number_of_blocks,
+    block_size,
+    air_r,
+):
+    """
+    Assign one cycle ID from each air onset until the next air onset.
+    """
+
+    cycle_id = np.zeros(
+        number_of_blocks,
+        dtype=np.int32,
+    )
+
+    if air_r is None:
+        return cycle_id
+
+    air_onsets = (
+        np.asarray(
+            air_r,
+            dtype=np.int64,
+        ) //
+        block_size
+    ).astype(int)
+
+    for cycle_number, onset in enumerate(
+        air_onsets,
+        start=1,
+    ):
+
+        next_onset = (
+            air_onsets[cycle_number]
+            if cycle_number < len(air_onsets)
+            else number_of_blocks
+        )
+
+        onset = max(
+            0,
+            min(
+                onset,
+                number_of_blocks,
+            ),
+        )
+
+        next_onset = max(
+            onset,
+            min(
+                next_onset,
+                number_of_blocks,
+            ),
+        )
+
+        cycle_id[
+            onset:next_onset
+        ] = cycle_number
+
+    return cycle_id
+
+
+def _construct_tone_from_air_onsets(
+    number_of_blocks,
+    block_size,
+    fs,
+    air_r,
+    tone_before_air_s,
+    tone_after_air_s,
+):
+    """
+    Reconstruct the protocol-defined tone interval:
+
+        tone onset = 3 s before air onset
+        tone offset = 2 s after air onset
+    """
+
+    tone_on = np.zeros(
+        number_of_blocks,
+        dtype=np.int8,
+    )
+
+    if air_r is None:
+        return tone_on
+
+    for air_onset in np.asarray(
+        air_r,
+        dtype=np.int64,
+    ):
+
+        tone_start_sample = int(
+            round(
+                air_onset -
+                tone_before_air_s * fs
+            )
+        )
+
+        tone_end_sample = int(
+            round(
+                air_onset +
+                tone_after_air_s * fs
+            )
+        )
+
+        start = int(
+            np.floor(
+                tone_start_sample /
+                block_size
+            )
+        )
+
+        end = int(
+            np.ceil(
+                tone_end_sample /
+                block_size
+            )
+        )
+
+        start = max(
+            0,
+            min(
+                start,
+                number_of_blocks,
+            ),
+        )
+
+        end = max(
+            start,
+            min(
+                end,
+                number_of_blocks,
+            ),
+        )
+
+        tone_on[start:end] = 1
+
+    return tone_on
+
+
+def _environment_mode(
+    led_on,
+    air_on,
+    tone_on,
+):
+    """
+    Combine binary environmental signals into readable labels.
+    """
+
+    labels = []
+
+    for led, air, tone in zip(
+        led_on,
+        air_on,
+        tone_on,
+    ):
+
+        active = []
+
+        if led:
+            active.append("led")
+
+        if tone:
+            active.append("tone")
+
+        if air:
+            active.append("air")
+
+        if active:
+            labels.append(
+                "+".join(active)
+            )
+        else:
+            labels.append("none")
+
+    return np.asarray(
+        labels,
+        dtype=object,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Episode table
+# -----------------------------------------------------------------------------
+
+
+def _build_state_episode_table(
+    state_timeseries_df,
+):
+    """
+    Convert the sample-level state series into one row per episode.
+    """
+
+    states = state_timeseries_df[
+        "kinematic_state"
+    ].to_numpy()
+
+    state_change = np.r_[
+        True,
+        states[1:] != states[:-1],
+    ]
+
+    episode_start_indices = np.flatnonzero(
+        state_change
+    )
+
+    episode_end_indices = np.r_[
+        episode_start_indices[1:],
+        len(state_timeseries_df),
+    ]
+
+    rows = []
+
+    for episode_number, (
+        start,
+        end,
+    ) in enumerate(
+        zip(
+            episode_start_indices,
+            episode_end_indices,
+        ),
+        start=1,
+    ):
+
+        segment = state_timeseries_df.iloc[
+            start:end
+        ]
+
+        state_name = segment[
+            "kinematic_state"
+        ].iloc[0]
+
+        duration_s = (
+            segment[
+                "session_time_s"
+            ].iloc[-1]
+            -
+            segment[
+                "session_time_s"
+            ].iloc[0]
+            +
+            1.0 /
+            state_timeseries_df.attrs[
+                "analysis_hz"
+            ]
+        )
+
+        acceleration = segment[
+            "acceleration_net_cmss"
+        ].to_numpy()
+
+        jerk = segment[
+            "jerk_net_cmsss"
+        ].to_numpy()
+
+        environment_counts = segment[
+            "environment_mode"
+        ].value_counts()
+
+        dominant_environment = (
+            environment_counts.index[0]
+            if len(environment_counts)
+            else "none"
+        )
+
+        rows.append(
+            {
+                "animal": segment[
+                    "animal"
+                ].iloc[0],
+
+                "date": segment[
+                    "date"
+                ].iloc[0],
+
+                "phase": segment[
+                    "phase"
+                ].iloc[0],
+
+                "episode": episode_number,
+                "kinematic_state": state_name,
+
+                "onset_analysis_index": int(
+                    start
+                ),
+
+                "offset_analysis_index": int(
+                    end
+                ),
+
+                "onset_original_sample": int(
+                    segment[
+                        "original_sample"
+                    ].iloc[0]
+                ),
+
+                "offset_original_sample": int(
+                    end *
+                    state_timeseries_df.attrs[
+                        "block_size"
+                    ]
+                ),
+
+                "onset_s": float(
+                    segment[
+                        "session_time_s"
+                    ].iloc[0]
+                ),
+
+                "offset_s": float(
+                    segment[
+                        "session_time_s"
+                    ].iloc[0]
+                    +
+                    duration_s
+                ),
+
+                "duration_s": float(
+                    duration_s
+                ),
+
+                "cycle_id_at_onset": int(
+                    segment[
+                        "cycle_id"
+                    ].iloc[0]
+                ),
+
+                "dominant_environment": (
+                    dominant_environment
+                ),
+
+                "led_fraction": float(
+                    segment[
+                        "led_on"
+                    ].mean()
+                ),
+
+                "air_fraction": float(
+                    segment[
+                        "air_on"
+                    ].mean()
+                ),
+
+                "tone_fraction": float(
+                    segment[
+                        "tone_on"
+                    ].mean()
+                ),
+
+                "net_displacement_cm": float(
+                    segment[
+                        "distance_net_session_cm"
+                    ].iloc[-1]
+                    -
+                    segment[
+                        "distance_net_session_cm"
+                    ].iloc[0]
+                ),
+
+                "path_distance_cm": float(
+                    segment[
+                        "distance_path_session_cm"
+                    ].iloc[-1]
+                    -
+                    segment[
+                        "distance_path_session_cm"
+                    ].iloc[0]
+                ),
+
+                "mean_speed_net_cms": float(
+                    segment[
+                        "speed_net_cms"
+                    ].mean()
+                ),
+
+                "mean_speed_path_cms": float(
+                    segment[
+                        "speed_path_cms"
+                    ].mean()
+                ),
+
+                "median_speed_path_cms": float(
+                    segment[
+                        "speed_path_cms"
+                    ].median()
+                ),
+
+                "peak_speed_path_cms": float(
+                    segment[
+                        "speed_path_cms"
+                    ].max()
+                ),
+
+                "mean_acceleration_cmss": float(
+                    np.mean(
+                        acceleration
+                    )
+                ),
+
+                "peak_acceleration_cmss": float(
+                    np.max(
+                        acceleration
+                    )
+                ),
+
+                "peak_deceleration_cmss": float(
+                    np.min(
+                        acceleration
+                    )
+                ),
+
+                "peak_absolute_jerk_cmsss": float(
+                    np.max(
+                        np.abs(
+                            jerk
+                        )
+                    )
+                ),
+
+                "rms_jerk_cmsss": float(
+                    np.sqrt(
+                        np.mean(
+                            jerk ** 2
+                        )
+                    )
+                ),
+            }
+        )
+
+    return pd.DataFrame(
+        rows
+    )
+
+
+# -----------------------------------------------------------------------------
+# Main function
+# -----------------------------------------------------------------------------
+
+
+def build_behavior_state_timeseries(
+    animal,
+    date,
+    cc_data=None,
+    state_config=None,
+    root=None,
+):
+    """
+    Build a downsampled kinematic-state time series from behavior_v1.h5.
+
+    Parameters
+    ----------
+    animal : str
+        Animal identifier, for example "NML_05".
+
+    date : str
+        Session date, for example "2026_01_04".
+
+    cc_data : dict or None
+        Existing classical-conditioning dictionary. When supplied,
+        phase is obtained from cc_data[animal][date]["phase"].
+
+    state_config : KinematicStateConfig or None
+        Analysis parameters.
+
+    root : str, Path, or None
+        Optional processed-data root. If None, pdio uses config.PROC_BASE.
+
+    Returns
+    -------
+    state_timeseries_df : pandas.DataFrame
+        One row per downsampled time point.
+
+    state_episodes_df : pandas.DataFrame
+        One row per contiguous kinematic-state episode.
+    """
+
+    if state_config is None:
+        state_config = KinematicStateConfig()
+
+    load_kwargs = {}
+
+    if root is not None:
+        load_kwargs["root"] = root
+
+    available_keys = pdio.list_behavior_h5_keys(
+        animal,
+        date,
+        **load_kwargs,
+    )
+
+    if available_keys is None:
+        raise FileNotFoundError(
+            f"No behavior_v1.h5 found for "
+            f"{animal}, {date}."
+        )
+
+    required_keys = [
+        "fs",
+        "speed_net_cms",
+        "speed_path_cms",
+        "dist_net_cm",
+        "dist_path_cm",
+    ]
+
+    missing_required = [
+        key
+        for key in required_keys
+        if key not in available_keys
+    ]
+
+    if missing_required:
+        raise KeyError(
+            f"Missing required H5 variables: "
+            f"{missing_required}"
+        )
+
+    optional_keys = [
+        key
+        for key in [
+            "number_of_samples",
+            "air_bin",
+            "Air_r",
+            "Air_f",
+            "led_bin",
+            "tone_bin",
+        ]
+        if key in available_keys
+    ]
+
+    keys_to_load = (
+        required_keys +
+        optional_keys
+    )
+
+    behavior = pdio.load_behavior_h5(
+        animal,
+        date,
+        keys=keys_to_load,
+        **load_kwargs,
+    )
+
+    fs = float(
+        np.asarray(
+            behavior["fs"]
+        ).squeeze()
+    )
+
+    number_of_original_samples = len(
+        np.asarray(
+            behavior[
+                "speed_net_cms"
+            ]
+        )
+    )
+
+    block_size = max(
+        1,
+        int(
+            round(
+                fs /
+                state_config.analysis_hz
+            )
+        ),
+    )
+
+    actual_analysis_hz = (
+        fs /
+        block_size
+    )
+
+    # Store the actual rate in the configuration used below.
+    state_config.analysis_hz = (
+        actual_analysis_hz
+    )
+
+    number_of_blocks = (
+        number_of_original_samples //
+        block_size
+    )
+
+    # -------------------------------------------------------------------------
+    # Downsample the continuous signals
+    # -------------------------------------------------------------------------
+
+    speed_net_raw = _block_mean(
+        behavior[
+            "speed_net_cms"
+        ],
+        block_size,
+        number_of_blocks,
+    )
+
+    speed_path_raw = _block_mean(
+        behavior[
+            "speed_path_cms"
+        ],
+        block_size,
+        number_of_blocks,
+    )
+
+    distance_net = _block_last(
+        behavior[
+            "dist_net_cm"
+        ],
+        block_size,
+        number_of_blocks,
+    )
+
+    distance_path = _block_last(
+        behavior[
+            "dist_path_cm"
+        ],
+        block_size,
+        number_of_blocks,
+    )
+
+    # Reset session-relative distance to zero.
+    distance_net = (
+        distance_net -
+        distance_net[0]
+    )
+
+    distance_path = (
+        distance_path -
+        distance_path[0]
+    )
+
+    # -------------------------------------------------------------------------
+    # Smooth speed and calculate acceleration and jerk
+    # -------------------------------------------------------------------------
+
+    filter_window = _safe_savgol_window(
+        number_of_samples=number_of_blocks,
+        requested_window_s=(
+            state_config.derivative_window_s
+        ),
+        analysis_hz=actual_analysis_hz,
+        polyorder=(
+            state_config.derivative_polyorder
+        ),
+    )
+
+    dt = 1.0 / actual_analysis_hz
+
+    speed_net = savgol_filter(
+        speed_net_raw,
+        window_length=filter_window,
+        polyorder=(
+            state_config.derivative_polyorder
+        ),
+        deriv=0,
+        delta=dt,
+        mode="interp",
+    )
+
+    speed_path = savgol_filter(
+        speed_path_raw,
+        window_length=filter_window,
+        polyorder=(
+            state_config.derivative_polyorder
+        ),
+        deriv=0,
+        delta=dt,
+        mode="interp",
+    )
+
+    speed_path = np.clip(
+        speed_path,
+        0,
+        None,
+    )
+
+    acceleration_net = savgol_filter(
+        speed_net_raw,
+        window_length=filter_window,
+        polyorder=(
+            state_config.derivative_polyorder
+        ),
+        deriv=1,
+        delta=dt,
+        mode="interp",
+    )
+
+    # Jerk is the second derivative of signed speed.
+    jerk_net = savgol_filter(
+        speed_net_raw,
+        window_length=filter_window,
+        polyorder=(
+            state_config.derivative_polyorder
+        ),
+        deriv=2,
+        delta=dt,
+        mode="interp",
+    )
+
+    # -------------------------------------------------------------------------
+    # Detect locomotor bouts
+    # -------------------------------------------------------------------------
+
+    moving_mask = _hysteresis_movement_mask(
+        speed_path_cms=speed_path,
+        move_on_cms=(
+            state_config.move_on_cms
+        ),
+        move_off_cms=(
+            state_config.move_off_cms
+        ),
+    )
+
+    moving_mask = _fill_short_false_gaps(
+        moving_mask,
+        maximum_gap_samples=max(
+            1,
+            round(
+                state_config.join_bout_gaps_s *
+                actual_analysis_hz
+            ),
+        ),
+    )
+
+    moving_mask = _remove_short_true_runs(
+        moving_mask,
+        minimum_run_samples=max(
+            1,
+            round(
+                state_config.min_bout_s *
+                actual_analysis_hz
+            ),
+        ),
+    )
+
+    locomotor_bouts = _find_true_runs(
+        moving_mask
+    )
+
+    # -------------------------------------------------------------------------
+    # Assign one kinematic state to every sample
+    # -------------------------------------------------------------------------
+
+    kinematic_state = np.full(
+        number_of_blocks,
+        "immobile",
+        dtype=object,
+    )
+
+    bout_id = np.zeros(
+        number_of_blocks,
+        dtype=np.int32,
+    )
+
+    bout_split_status = np.full(
+        number_of_blocks,
+        "",
+        dtype=object,
+    )
+
+    for current_bout_id, (
+        bout_start,
+        bout_end,
+    ) in enumerate(
+        locomotor_bouts,
+        start=1,
+    ):
+
+        bout_id[
+            bout_start:bout_end
+        ] = current_bout_id
+
+        split = _split_locomotor_bout(
+            speed_path_cms=speed_path,
+            bout_start=bout_start,
+            bout_end=bout_end,
+            state_config=state_config,
+        )
+
+        for state_name in [
+            "initiation",
+            "sustained",
+            "deceleration",
+        ]:
+
+            interval = split[
+                state_name
+            ]
+
+            if interval is None:
+                continue
+
+            state_start, state_end = interval
+
+            if state_end <= state_start:
+                continue
+
+            kinematic_state[
+                state_start:state_end
+            ] = state_name
+
+            bout_split_status[
+                state_start:state_end
+            ] = split[
+                "status"
+            ]
+
+    state_code_map = {
+        "immobile": 0,
+        "initiation": 1,
+        "sustained": 2,
+        "deceleration": 3,
+    }
+
+    state_code = np.asarray(
+        [
+            state_code_map[state]
+            for state in kinematic_state
+        ],
+        dtype=np.int8,
+    )
+
+    movement_direction = np.full(
+        number_of_blocks,
+        "near_zero",
+        dtype=object,
+    )
+
+    movement_direction[
+        speed_net >=
+        state_config.move_on_cms
+    ] = "forward"
+
+    movement_direction[
+        speed_net <=
+        -state_config.move_on_cms
+    ] = "backward"
+
+    # -------------------------------------------------------------------------
+    # Obtain phase and environmental signals
+    # -------------------------------------------------------------------------
+
+    phase = "unknown"
+
+    if cc_data is not None:
+
+        phase = (
+            cc_data
+            .get(animal, {})
+            .get(date, {})
+            .get("phase", "unknown")
+        )
+
+    air_r = behavior.get(
+        "Air_r",
+        None,
+    )
+
+    air_f = behavior.get(
+        "Air_f",
+        None,
+    )
+
+    base_binary_signal = None
+
+    if "air_bin" in behavior:
+
+        base_binary_signal = _block_binary(
+            behavior[
+                "air_bin"
+            ],
+            block_size,
+            number_of_blocks,
+        )
+
+    led_on = np.zeros(
+        number_of_blocks,
+        dtype=np.int8,
+    )
+
+    air_on = np.zeros(
+        number_of_blocks,
+        dtype=np.int8,
+    )
+
+    tone_on = np.zeros(
+        number_of_blocks,
+        dtype=np.int8,
+    )
+
+    tone_reconstructed = False
+
+    # During repeated exposure, the recorded alternating control
+    # signal represents the LED timing condition.
+    if phase == "habituation":
+
+        if base_binary_signal is not None:
+            led_on = base_binary_signal
+
+        elif air_r is not None and air_f is not None:
+            led_on = _construct_air_from_edges(
+                number_of_blocks,
+                block_size,
+                air_r,
+                air_f,
+            )
+
+    # During air and tone-air phases, it represents air delivery.
+    elif phase in [
+        "air_training",
+        "tone_air_training",
+    ]:
+
+        if air_r is not None and air_f is not None:
+
+            air_on = _construct_air_from_edges(
+                number_of_blocks,
+                block_size,
+                air_r,
+                air_f,
+            )
+
+        elif base_binary_signal is not None:
+            air_on = base_binary_signal
+
+    # If phase is unknown, retain the existing air_bin interpretation.
+    else:
+
+        if air_r is not None and air_f is not None:
+
+            air_on = _construct_air_from_edges(
+                number_of_blocks,
+                block_size,
+                air_r,
+                air_f,
+            )
+
+        elif base_binary_signal is not None:
+            air_on = base_binary_signal
+
+    # Use a directly recorded LED variable if one exists.
+    if "led_bin" in behavior:
+
+        led_on = _block_binary(
+            behavior[
+                "led_bin"
+            ],
+            block_size,
+            number_of_blocks,
+        )
+
+    # Use a directly recorded tone variable if one exists.
+    if "tone_bin" in behavior:
+
+        tone_on = _block_binary(
+            behavior[
+                "tone_bin"
+            ],
+            block_size,
+            number_of_blocks,
+        )
+
+    elif (
+        phase == "tone_air_training"
+        and
+        state_config.reconstruct_tone_from_air
+    ):
+
+        tone_on = _construct_tone_from_air_onsets(
+            number_of_blocks=(
+                number_of_blocks
+            ),
+            block_size=block_size,
+            fs=fs,
+            air_r=air_r,
+            tone_before_air_s=(
+                state_config.tone_before_air_s
+            ),
+            tone_after_air_s=(
+                state_config.tone_after_air_s
+            ),
+        )
+
+        tone_reconstructed = True
+
+    cycle_id = _construct_cycle_id(
+        number_of_blocks=number_of_blocks,
+        block_size=block_size,
+        air_r=air_r,
+    )
+
+    environment_mode = _environment_mode(
+        led_on=led_on,
+        air_on=air_on,
+        tone_on=tone_on,
+    )
+
+    # -------------------------------------------------------------------------
+    # Construct sample-level DataFrame
+    # -------------------------------------------------------------------------
+
+    original_sample = (
+        np.arange(
+            number_of_blocks,
+            dtype=np.int64,
+        ) *
+        block_size
+    )
+
+    session_time_s = (
+        original_sample /
+        fs
+    )
+
+    state_timeseries_df = pd.DataFrame(
+        {
+            "animal": animal,
+            "date": date,
+            "phase": phase,
+
+            "analysis_index": np.arange(
+                number_of_blocks,
+                dtype=np.int64,
+            ),
+
+            "original_sample": (
+                original_sample
+            ),
+
+            "session_time_s": (
+                session_time_s
+            ),
+
+            "cycle_id": cycle_id,
+
+            "led_on": led_on,
+            "air_on": air_on,
+            "tone_on": tone_on,
+
+            "environment_mode": (
+                environment_mode
+            ),
+
+            "distance_net_session_cm": (
+                distance_net
+            ),
+
+            "distance_path_session_cm": (
+                distance_path
+            ),
+
+            "speed_net_raw_cms": (
+                speed_net_raw
+            ),
+
+            "speed_path_raw_cms": (
+                speed_path_raw
+            ),
+
+            "speed_net_cms": speed_net,
+            "speed_path_cms": speed_path,
+
+            "acceleration_net_cmss": (
+                acceleration_net
+            ),
+
+            "jerk_net_cmsss": jerk_net,
+
+            "moving": moving_mask,
+            "bout_id": bout_id,
+
+            "movement_direction": (
+                movement_direction
+            ),
+
+            "kinematic_state": (
+                kinematic_state
+            ),
+
+            "kinematic_state_code": (
+                state_code
+            ),
+
+            "bout_split_status": (
+                bout_split_status
+            ),
+        }
+    )
+
+    metadata = {
+        "animal": animal,
+        "date": date,
+        "phase": phase,
+        "original_fs": fs,
+        "analysis_hz": actual_analysis_hz,
+        "block_size": block_size,
+        "filter_window_samples": (
+            filter_window
+        ),
+        "tone_reconstructed": (
+            tone_reconstructed
+        ),
+    }
+
+    state_timeseries_df.attrs.update(
+        metadata
+    )
+
+    state_episodes_df = (
+        _build_state_episode_table(
+            state_timeseries_df
+        )
+    )
+
+    state_episodes_df.attrs.update(
+        metadata
+    )
+
+    return (
+        state_timeseries_df,
+        state_episodes_df,
+    )

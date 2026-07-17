@@ -1,0 +1,254 @@
+timestamp,animal,date,phase,source_path,remote_path,status,message
+2026-07-14T17:54:02,NML_04,2025_12_27,habituation,/mnt/data/Classical_Conditioning/NML_04/2025_12_27/recording_20251227_154502.mat,data_mat_files/NML_04/2025_12_27/recording_20251227_154502.mat,uploaded,success
+2026-07-14T17:54:18,NML_04,2025_12_28,habituation,/mnt/data/Classical_Conditioning/NML_04/2025_12_28/recording_20251228_154611.mat,data_mat_files/NML_04/2025_12_28/recording_20251228_154611.mat,uploaded,success
+2026-07-14T17:54:36,NML_04,2025_12_29,habituation,/mnt/data/Classical_Conditioning/NML_04/2025_12_29/recording_20251229_152721.mat,data_mat_files/NML_04/2025_12_29/recording_20251229_152721.mat,uploaded,success
+2026-07-14T17:55:00,NML_04,2025_12_30,habituation,/mnt/data/Classical_Conditioning/NML_04/2025_12_30/recording_20251230_161247.mat,data_mat_files/NML_04/2025_12_30/recording_20251230_161247.mat,uploaded,success
+2026-07-14T17:55:18,NML_04,2025_12_31,habituation,/mnt/data/Classical_Conditioning/NML_04/2025_12_31/recording_20251231_154103.mat,data_mat_files/NML_04/2025_12_31/recording_20251231_154103.mat,uploaded,success
+2026-07-14T17:55:35,NML_04,2026_01_01,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_01/recording_20260101_153503.mat,data_mat_files/NML_04/2026_01_01/recording_20260101_153503.mat,uploaded,success
+2026-07-14T17:55:50,NML_04,2026_01_02,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_02/recording_20260102_154404.mat,data_mat_files/NML_04/2026_01_02/recording_20260102_154404.mat,uploaded,success
+2026-07-14T17:56:12,NML_04,2026_01_03,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_03/recording_20260103_152107.mat,data_mat_files/NML_04/2026_01_03/recording_20260103_152107.mat,uploaded,success
+2026-07-14T17:56:27,NML_04,2026_01_04,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_04/recording_20260104_150047.mat,data_mat_files/NML_04/2026_01_04/recording_20260104_150047.mat,uploaded,success
+2026-07-14T17:56:48,NML_04,2026_01_05,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_05/recording_20260105_152545.mat,data_mat_files/NML_04/2026_01_05/recording_20260105_152545.mat,uploaded,success
+2026-07-14T17:57:04,NML_04,2026_01_06,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_06/recording_20260106_160723.mat,data_mat_files/NML_04/2026_01_06/recording_20260106_160723.mat,uploaded,success
+2026-07-14T17:57:28,NML_04,2026_01_07,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_07/recording_20260107_154036.mat,data_mat_files/NML_04/2026_01_07/recording_20260107_154036.mat,uploaded,success
+2026-07-14T17:57:45,NML_04,2026_01_08,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_08/recording_20260108_151332.mat,data_mat_files/NML_04/2026_01_08/recording_20260108_151332.mat,uploaded,success
+2026-07-14T17:58:03,NML_04,2026_01_09,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_09/recording_20260109_154814.mat,data_mat_files/NML_04/2026_01_09/recording_20260109_154814.mat,uploaded,success
+2026-07-14T17:58:19,NML_04,2026_01_10,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_10/recording_20260110_154534.mat,data_mat_files/NML_04/2026_01_10/recording_20260110_154534.mat,uploaded,success
+2026-07-14T17:58:37,NML_04,2026_01_11,habituation,/mnt/data/Classical_Conditioning/NML_04/2026_01_11/recording_20260111_151441.mat,data_mat_files/NML_04/2026_01_11/recording_20260111_151441.mat,uploaded,success
+2026-07-14T17:58:53,NML_04,2026_01_12,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_12/recording_20260112_161549.mat,data_mat_files/NML_04/2026_01_12/recording_20260112_161549.mat,uploaded,success
+2026-07-14T17:59:09,NML_04,2026_01_13,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_13/recording_20260113_152756.mat,data_mat_files/NML_04/2026_01_13/recording_20260113_152756.mat,uploaded,success
+2026-07-14T17:59:21,NML_04,2026_01_14,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_14/recording_20260114_161058.mat,data_mat_files/NML_04/2026_01_14/recording_20260114_161058.mat,failed,"Traceback (most recent call last):
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/bin/osf"", line 8, in <module>
+    sys.exit(main())
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/__main__.py"", line 120, in main
+    exit_code = args.func(args)
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/cli.py"", line 98, in wrapper
+    return_value = f(cli_args)
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/cli.py"", line 325, in upload
+    store.create_file(remote_path, fp, force=args.force,
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/models/storage.py"", line 113, in create_file
+    raise FileExistsError(path)
+FileExistsError: data_mat_files/NML_04/2026_01_14/recording_20260114_161058.mat"
+2026-07-14T18:36:20,NML_04,2026_01_14,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_14/recording_20260114_161058.mat,data_mat_files/NML_04/2026_01_14/recording_20260114_161058.mat,uploaded,success
+2026-07-14T18:36:36,NML_04,2026_01_15,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_15/recording_20260115_163127.mat,data_mat_files/NML_04/2026_01_15/recording_20260115_163127.mat,failed,"Traceback (most recent call last):
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/bin/osf"", line 8, in <module>
+    sys.exit(main())
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/__main__.py"", line 120, in main
+    exit_code = args.func(args)
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/cli.py"", line 98, in wrapper
+    return_value = f(cli_args)
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/cli.py"", line 325, in upload
+    store.create_file(remote_path, fp, force=args.force,
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/models/storage.py"", line 113, in create_file
+    raise FileExistsError(path)
+FileExistsError: data_mat_files/NML_04/2026_01_15/recording_20260115_163127.mat"
+2026-07-14T18:38:01,NML_04,2026_01_15,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_15/recording_20260115_163127.mat,data_mat_files/NML_04/2026_01_15/recording_20260115_163127.mat,uploaded,success
+2026-07-14T18:38:18,NML_04,2026_01_16,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_16/recording_20260116_145008.mat,data_mat_files/NML_04/2026_01_16/recording_20260116_145008.mat,uploaded,success
+2026-07-14T18:38:33,NML_04,2026_01_17,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_17/recording_20260117_151117.mat,data_mat_files/NML_04/2026_01_17/recording_20260117_151117.mat,uploaded,success
+2026-07-14T18:38:54,NML_04,2026_01_18,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_18/recording_20260118_152003.mat,data_mat_files/NML_04/2026_01_18/recording_20260118_152003.mat,uploaded,success
+2026-07-14T18:39:09,NML_04,2026_01_20,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_20/recording_20260120_150253.mat,data_mat_files/NML_04/2026_01_20/recording_20260120_150253.mat,uploaded,success
+2026-07-14T18:39:25,NML_04,2026_01_21,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_21/recording_20260121_152930.mat,data_mat_files/NML_04/2026_01_21/recording_20260121_152930.mat,uploaded,success
+2026-07-14T18:39:40,NML_04,2026_01_22,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_22/recording_20260122_151106.mat,data_mat_files/NML_04/2026_01_22/recording_20260122_151106.mat,uploaded,success
+2026-07-14T18:39:58,NML_04,2026_01_23,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_23/recording_20260123_160354.mat,data_mat_files/NML_04/2026_01_23/recording_20260123_160354.mat,uploaded,success
+2026-07-14T18:40:13,NML_04,2026_01_24,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_24/recording_20260124_154238.mat,data_mat_files/NML_04/2026_01_24/recording_20260124_154238.mat,uploaded,success
+2026-07-14T18:40:25,NML_04,2026_01_25,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_25/recording_20260125_153246.mat,data_mat_files/NML_04/2026_01_25/recording_20260125_153246.mat,failed,"Traceback (most recent call last):
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/bin/osf"", line 8, in <module>
+    sys.exit(main())
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/__main__.py"", line 120, in main
+    exit_code = args.func(args)
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/cli.py"", line 98, in wrapper
+    return_value = f(cli_args)
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/cli.py"", line 325, in upload
+    store.create_file(remote_path, fp, force=args.force,
+  File ""/home/nmldata2/miniconda3/envs/air_wheel/lib/python3.8/site-packages/osfclient/models/storage.py"", line 113, in create_file
+    raise FileExistsError(path)
+FileExistsError: data_mat_files/NML_04/2026_01_25/recording_20260125_153246.mat"
+2026-07-14T18:44:38,NML_04,2026_01_25,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_25/recording_20260125_153246.mat,data_mat_files/NML_04/2026_01_25/recording_20260125_153246.mat,uploaded,success
+2026-07-14T18:45:00,NML_04,2026_01_26,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_26/recording_20260126_153654.mat,data_mat_files/NML_04/2026_01_26/recording_20260126_153654.mat,uploaded,success
+2026-07-14T18:45:22,NML_04,2026_01_27,air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_27/recording_20260127_153117.mat,data_mat_files/NML_04/2026_01_27/recording_20260127_153117.mat,uploaded,success
+2026-07-14T18:45:42,NML_04,2026_01_28,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_28/recording_20260128_155543.mat,data_mat_files/NML_04/2026_01_28/recording_20260128_155543.mat,uploaded,success
+2026-07-14T18:46:04,NML_04,2026_01_29,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_29/recording_20260129_155114.mat,data_mat_files/NML_04/2026_01_29/recording_20260129_155114.mat,uploaded,success
+2026-07-14T18:46:25,NML_04,2026_01_30,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_30/recording_20260130_153406.mat,data_mat_files/NML_04/2026_01_30/recording_20260130_153406.mat,uploaded,success
+2026-07-14T18:46:48,NML_04,2026_01_31,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_01_31/recording_20260131_152129.mat,data_mat_files/NML_04/2026_01_31/recording_20260131_152129.mat,uploaded,success
+2026-07-14T18:47:09,NML_04,2026_02_01,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_02_01/recording_20260201_164502.mat,data_mat_files/NML_04/2026_02_01/recording_20260201_164502.mat,uploaded,success
+2026-07-14T18:57:27,NML_04,2026_02_02,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_02_02/recording_20260202_161927.mat,data_mat_files/NML_04/2026_02_02/recording_20260202_161927.mat,uploaded,success
+2026-07-14T18:57:47,NML_04,2026_02_03,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_02_03/recording_20260203_155458.mat,data_mat_files/NML_04/2026_02_03/recording_20260203_155458.mat,uploaded,success
+2026-07-14T18:58:07,NML_04,2026_02_04,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_02_04/recording_20260204_160421.mat,data_mat_files/NML_04/2026_02_04/recording_20260204_160421.mat,uploaded,success
+2026-07-14T18:58:27,NML_04,2026_02_05,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_02_05/recording_20260205_155950.mat,data_mat_files/NML_04/2026_02_05/recording_20260205_155950.mat,uploaded,success
+2026-07-14T18:58:50,NML_04,2026_02_06,tone_air_training,/mnt/data/Classical_Conditioning/NML_04/2026_02_06/recording_20260206_155429.mat,data_mat_files/NML_04/2026_02_06/recording_20260206_155429.mat,uploaded,success
+2026-07-14T18:59:24,NML_05,2025_12_27,habituation,/mnt/data/Classical_Conditioning/NML_05/2025_12_27/recording_20251227_163733.mat,data_mat_files/NML_05/2025_12_27/recording_20251227_163733.mat,uploaded,success
+2026-07-14T18:59:49,NML_05,2025_12_28,habituation,/mnt/data/Classical_Conditioning/NML_05/2025_12_28/recording_20251228_162107.mat,data_mat_files/NML_05/2025_12_28/recording_20251228_162107.mat,uploaded,success
+2026-07-14T19:00:14,NML_05,2025_12_29,habituation,/mnt/data/Classical_Conditioning/NML_05/2025_12_29/recording_20251229_155300.mat,data_mat_files/NML_05/2025_12_29/recording_20251229_155300.mat,uploaded,success
+2026-07-14T19:00:57,NML_05,2025_12_30,habituation,/mnt/data/Classical_Conditioning/NML_05/2025_12_30/recording_20251230_165125.mat,data_mat_files/NML_05/2025_12_30/recording_20251230_165125.mat,uploaded,success
+2026-07-14T19:01:26,NML_05,2025_12_31,habituation,/mnt/data/Classical_Conditioning/NML_05/2025_12_31/recording_20251231_160738.mat,data_mat_files/NML_05/2025_12_31/recording_20251231_160738.mat,uploaded,success
+2026-07-14T19:02:04,NML_05,2026_01_01,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_01/recording_20260101_160219.mat,data_mat_files/NML_05/2026_01_01/recording_20260101_160219.mat,uploaded,success
+2026-07-14T19:03:11,NML_05,2026_01_02,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_02/recording_20260102_160926.mat,data_mat_files/NML_05/2026_01_02/recording_20260102_160926.mat,uploaded,success
+2026-07-14T19:04:06,NML_05,2026_01_03,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_03/recording_20260103_155156.mat,data_mat_files/NML_05/2026_01_03/recording_20260103_155156.mat,uploaded,success
+2026-07-14T19:04:27,NML_05,2026_01_04,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_04/recording_20260104_152438.mat,data_mat_files/NML_05/2026_01_04/recording_20260104_152438.mat,uploaded,success
+2026-07-14T19:04:51,NML_05,2026_01_05,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_05/recording_20260105_160136.mat,data_mat_files/NML_05/2026_01_05/recording_20260105_160136.mat,uploaded,success
+2026-07-14T19:05:15,NML_05,2026_01_06,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_06/recording_20260106_163542.mat,data_mat_files/NML_05/2026_01_06/recording_20260106_163542.mat,uploaded,success
+2026-07-14T19:05:39,NML_05,2026_01_07,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_07/recording_20260107_160706.mat,data_mat_files/NML_05/2026_01_07/recording_20260107_160706.mat,uploaded,success
+2026-07-14T19:06:32,NML_05,2026_01_08,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_08/recording_20260108_155330.mat,data_mat_files/NML_05/2026_01_08/recording_20260108_155330.mat,uploaded,success
+2026-07-14T19:07:35,NML_05,2026_01_09,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_09/recording_20260109_161502.mat,data_mat_files/NML_05/2026_01_09/recording_20260109_161502.mat,uploaded,success
+2026-07-14T19:08:27,NML_05,2026_01_10,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_10/recording_20260110_161149.mat,data_mat_files/NML_05/2026_01_10/recording_20260110_161149.mat,uploaded,success
+2026-07-14T19:09:18,NML_05,2026_01_11,habituation,/mnt/data/Classical_Conditioning/NML_05/2026_01_11/recording_20260111_154047.mat,data_mat_files/NML_05/2026_01_11/recording_20260111_154047.mat,uploaded,success
+2026-07-14T19:09:40,NML_05,2026_01_12,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_12/recording_20260112_164350.mat,data_mat_files/NML_05/2026_01_12/recording_20260112_164350.mat,uploaded,success
+2026-07-14T19:10:05,NML_05,2026_01_13,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_13/recording_20260113_155517.mat,data_mat_files/NML_05/2026_01_13/recording_20260113_155517.mat,uploaded,success
+2026-07-14T19:10:54,NML_05,2026_01_14,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_14/recording_20260114_164024.mat,data_mat_files/NML_05/2026_01_14/recording_20260114_164024.mat,uploaded,success
+2026-07-14T19:11:16,NML_05,2026_01_15,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_15/recording_20260115_165741.mat,data_mat_files/NML_05/2026_01_15/recording_20260115_165741.mat,uploaded,success
+2026-07-14T19:12:08,NML_05,2026_01_16,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_16/recording_20260116_151642.mat,data_mat_files/NML_05/2026_01_16/recording_20260116_151642.mat,uploaded,success
+2026-07-14T19:13:09,NML_05,2026_01_17,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_17/recording_20260117_153743.mat,data_mat_files/NML_05/2026_01_17/recording_20260117_153743.mat,uploaded,success
+2026-07-14T19:13:56,NML_05,2026_01_18,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_18/recording_20260118_154752.mat,data_mat_files/NML_05/2026_01_18/recording_20260118_154752.mat,uploaded,success
+2026-07-14T19:14:36,NML_05,2026_01_20,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_20/recording_20260120_152936.mat,data_mat_files/NML_05/2026_01_20/recording_20260120_152936.mat,uploaded,success
+2026-07-14T19:15:30,NML_05,2026_01_21,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_21/recording_20260121_155705.mat,data_mat_files/NML_05/2026_01_21/recording_20260121_155705.mat,uploaded,success
+2026-07-14T19:16:18,NML_05,2026_01_22,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_22/recording_20260122_153800.mat,data_mat_files/NML_05/2026_01_22/recording_20260122_153800.mat,uploaded,success
+2026-07-14T19:17:13,NML_05,2026_01_23,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_23/recording_20260123_163022.mat,data_mat_files/NML_05/2026_01_23/recording_20260123_163022.mat,uploaded,success
+2026-07-14T19:18:28,NML_05,2026_01_24,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_24/recording_20260124_160859.mat,data_mat_files/NML_05/2026_01_24/recording_20260124_160859.mat,uploaded,success
+2026-07-14T19:19:00,NML_05,2026_01_25,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_25/recording_20260125_155845.mat,data_mat_files/NML_05/2026_01_25/recording_20260125_155845.mat,uploaded,success
+2026-07-14T19:19:27,NML_05,2026_01_26,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_26/recording_20260126_160543.mat,data_mat_files/NML_05/2026_01_26/recording_20260126_160543.mat,uploaded,success
+2026-07-14T19:19:51,NML_05,2026_01_27,air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_27/recording_20260127_155853.mat,data_mat_files/NML_05/2026_01_27/recording_20260127_155853.mat,uploaded,success
+2026-07-14T19:20:17,NML_05,2026_01_28,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_28/recording_20260128_162145.mat,data_mat_files/NML_05/2026_01_28/recording_20260128_162145.mat,uploaded,success
+2026-07-14T19:20:59,NML_05,2026_01_29,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_29/recording_20260129_161710.mat,data_mat_files/NML_05/2026_01_29/recording_20260129_161710.mat,uploaded,success
+2026-07-14T19:21:30,NML_05,2026_01_30,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_30/recording_20260130_160013.mat,data_mat_files/NML_05/2026_01_30/recording_20260130_160013.mat,uploaded,success
+2026-07-14T19:21:56,NML_05,2026_01_31,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_01_31/recording_20260131_154726.mat,data_mat_files/NML_05/2026_01_31/recording_20260131_154726.mat,uploaded,success
+2026-07-14T19:22:22,NML_05,2026_02_01,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_02_01/recording_20260201_171320.mat,data_mat_files/NML_05/2026_02_01/recording_20260201_171320.mat,uploaded,success
+2026-07-14T19:22:46,NML_05,2026_02_02,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_02_02/recording_20260202_164214.mat,data_mat_files/NML_05/2026_02_02/recording_20260202_164214.mat,uploaded,success
+2026-07-14T19:24:01,NML_05,2026_02_03,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_02_03/recording_20260203_162001.mat,data_mat_files/NML_05/2026_02_03/recording_20260203_162001.mat,uploaded,success
+2026-07-14T19:24:27,NML_05,2026_02_04,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_02_04/recording_20260204_162938.mat,data_mat_files/NML_05/2026_02_04/recording_20260204_162938.mat,uploaded,success
+2026-07-14T19:25:39,NML_05,2026_02_05,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_02_05/recording_20260205_162512.mat,data_mat_files/NML_05/2026_02_05/recording_20260205_162512.mat,uploaded,success
+2026-07-14T19:26:00,NML_05,2026_02_06,tone_air_training,/mnt/data/Classical_Conditioning/NML_05/2026_02_06/recording_20260206_161949.mat,data_mat_files/NML_05/2026_02_06/recording_20260206_161949.mat,uploaded,success
+2026-07-14T19:26:21,NML_06,2025_12_27,habituation,/mnt/data/Classical_Conditioning/NML_06/2025_12_27/recording_20251227_171118.mat,data_mat_files/NML_06/2025_12_27/recording_20251227_171118.mat,uploaded,success
+2026-07-14T19:27:45,NML_06,2025_12_28,habituation,/mnt/data/Classical_Conditioning/NML_06/2025_12_28/recording_20251228_164737.mat,data_mat_files/NML_06/2025_12_28/recording_20251228_164737.mat,uploaded,success
+2026-07-14T19:28:25,NML_06,2025_12_29,habituation,/mnt/data/Classical_Conditioning/NML_06/2025_12_29/recording_20251229_162007.mat,data_mat_files/NML_06/2025_12_29/recording_20251229_162007.mat,uploaded,success
+2026-07-14T19:29:15,NML_06,2025_12_30,habituation,/mnt/data/Classical_Conditioning/NML_06/2025_12_30/recording_20251230_172356.mat,data_mat_files/NML_06/2025_12_30/recording_20251230_172356.mat,uploaded,success
+2026-07-14T19:30:17,NML_06,2025_12_31,habituation,/mnt/data/Classical_Conditioning/NML_06/2025_12_31/recording_20251231_163408.mat,data_mat_files/NML_06/2025_12_31/recording_20251231_163408.mat,uploaded,success
+2026-07-14T19:31:36,NML_06,2026_01_01,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_01/recording_20260101_163233.mat,data_mat_files/NML_06/2026_01_01/recording_20260101_163233.mat,uploaded,success
+2026-07-14T19:32:51,NML_06,2026_01_02,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_02/recording_20260102_163502.mat,data_mat_files/NML_06/2026_01_02/recording_20260102_163502.mat,uploaded,success
+2026-07-14T19:33:11,NML_06,2026_01_03,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_03/recording_20260103_161939.mat,data_mat_files/NML_06/2026_01_03/recording_20260103_161939.mat,uploaded,success
+2026-07-14T19:33:57,NML_06,2026_01_04,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_04/recording_20260104_154959.mat,data_mat_files/NML_06/2026_01_04/recording_20260104_154959.mat,uploaded,success
+2026-07-14T19:35:00,NML_06,2026_01_05,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_05/recording_20260105_162715.mat,data_mat_files/NML_06/2026_01_05/recording_20260105_162715.mat,uploaded,success
+2026-07-14T19:35:21,NML_06,2026_01_06,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_06/recording_20260106_170021.mat,data_mat_files/NML_06/2026_01_06/recording_20260106_170021.mat,uploaded,success
+2026-07-14T19:36:01,NML_06,2026_01_07,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_07/recording_20260107_163552.mat,data_mat_files/NML_06/2026_01_07/recording_20260107_163552.mat,uploaded,success
+2026-07-14T19:36:19,NML_06,2026_01_08,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_08/recording_20260108_162111.mat,data_mat_files/NML_06/2026_01_08/recording_20260108_162111.mat,uploaded,success
+2026-07-14T19:36:41,NML_06,2026_01_09,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_09/recording_20260109_164155.mat,data_mat_files/NML_06/2026_01_09/recording_20260109_164155.mat,uploaded,success
+2026-07-14T19:37:08,NML_06,2026_01_10,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_10/recording_20260110_163859.mat,data_mat_files/NML_06/2026_01_10/recording_20260110_163859.mat,uploaded,success
+2026-07-14T19:37:28,NML_06,2026_01_11,habituation,/mnt/data/Classical_Conditioning/NML_06/2026_01_11/recording_20260111_160812.mat,data_mat_files/NML_06/2026_01_11/recording_20260111_160812.mat,uploaded,success
+2026-07-14T19:38:07,NML_06,2026_01_12,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_12/recording_20260112_170955.mat,data_mat_files/NML_06/2026_01_12/recording_20260112_170955.mat,uploaded,success
+2026-07-14T19:38:29,NML_06,2026_01_13,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_13/recording_20260113_162113.mat,data_mat_files/NML_06/2026_01_13/recording_20260113_162113.mat,uploaded,success
+2026-07-14T19:38:49,NML_06,2026_01_14,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_14/recording_20260114_170625.mat,data_mat_files/NML_06/2026_01_14/recording_20260114_170625.mat,uploaded,success
+2026-07-14T19:39:13,NML_06,2026_01_15,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_15/recording_20260115_172336.mat,data_mat_files/NML_06/2026_01_15/recording_20260115_172336.mat,uploaded,success
+2026-07-14T19:39:52,NML_06,2026_01_16,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_16/recording_20260116_154115.mat,data_mat_files/NML_06/2026_01_16/recording_20260116_154115.mat,uploaded,success
+2026-07-14T19:40:16,NML_06,2026_01_17,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_17/recording_20260117_161818.mat,data_mat_files/NML_06/2026_01_17/recording_20260117_161818.mat,uploaded,success
+2026-07-14T19:41:02,NML_06,2026_01_18,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_18/recording_20260118_161500.mat,data_mat_files/NML_06/2026_01_18/recording_20260118_161500.mat,uploaded,success
+2026-07-14T19:41:24,NML_06,2026_01_20,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_20/recording_20260120_155626.mat,data_mat_files/NML_06/2026_01_20/recording_20260120_155626.mat,uploaded,success
+2026-07-14T19:41:47,NML_06,2026_01_21,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_21/recording_20260121_162939.mat,data_mat_files/NML_06/2026_01_21/recording_20260121_162939.mat,uploaded,success
+2026-07-14T19:42:09,NML_06,2026_01_22,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_22/recording_20260122_160528.mat,data_mat_files/NML_06/2026_01_22/recording_20260122_160528.mat,uploaded,success
+2026-07-14T19:42:30,NML_06,2026_01_23,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_23/recording_20260123_165640.mat,data_mat_files/NML_06/2026_01_23/recording_20260123_165640.mat,uploaded,success
+2026-07-14T19:42:53,NML_06,2026_01_24,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_24/recording_20260124_163550.mat,data_mat_files/NML_06/2026_01_24/recording_20260124_163550.mat,uploaded,success
+2026-07-14T19:43:15,NML_06,2026_01_25,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_25/recording_20260125_165622.mat,data_mat_files/NML_06/2026_01_25/recording_20260125_165622.mat,uploaded,success
+2026-07-14T19:43:35,NML_06,2026_01_26,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_26/recording_20260126_163343.mat,data_mat_files/NML_06/2026_01_26/recording_20260126_163343.mat,uploaded,success
+2026-07-14T19:43:57,NML_06,2026_01_27,air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_27/recording_20260127_162510.mat,data_mat_files/NML_06/2026_01_27/recording_20260127_162510.mat,uploaded,success
+2026-07-14T19:44:18,NML_06,2026_01_28,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_28/recording_20260128_164725.mat,data_mat_files/NML_06/2026_01_28/recording_20260128_164725.mat,uploaded,success
+2026-07-14T19:44:57,NML_06,2026_01_29,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_29/recording_20260129_164446.mat,data_mat_files/NML_06/2026_01_29/recording_20260129_164446.mat,uploaded,success
+2026-07-14T19:45:18,NML_06,2026_01_30,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_30/recording_20260130_162653.mat,data_mat_files/NML_06/2026_01_30/recording_20260130_162653.mat,uploaded,success
+2026-07-14T19:45:39,NML_06,2026_01_31,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_01_31/recording_20260131_161344.mat,data_mat_files/NML_06/2026_01_31/recording_20260131_161344.mat,uploaded,success
+2026-07-14T19:45:58,NML_06,2026_02_01,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_02_01/recording_20260201_173959.mat,data_mat_files/NML_06/2026_02_01/recording_20260201_173959.mat,uploaded,success
+2026-07-14T19:46:21,NML_06,2026_02_02,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_02_02/recording_20260202_170749.mat,data_mat_files/NML_06/2026_02_02/recording_20260202_170749.mat,uploaded,success
+2026-07-14T19:46:44,NML_06,2026_02_03,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_02_03/recording_20260203_164633.mat,data_mat_files/NML_06/2026_02_03/recording_20260203_164633.mat,uploaded,success
+2026-07-14T19:47:08,NML_06,2026_02_04,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_02_04/recording_20260204_165542.mat,data_mat_files/NML_06/2026_02_04/recording_20260204_165542.mat,uploaded,success
+2026-07-14T19:47:31,NML_06,2026_02_05,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_02_05/recording_20260205_165106.mat,data_mat_files/NML_06/2026_02_05/recording_20260205_165106.mat,uploaded,success
+2026-07-14T19:47:53,NML_06,2026_02_06,tone_air_training,/mnt/data/Classical_Conditioning/NML_06/2026_02_06/recording_20260206_164459.mat,data_mat_files/NML_06/2026_02_06/recording_20260206_164459.mat,uploaded,success
+2026-07-14T19:48:13,NML_07,2026_02_02,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_02/recording_20260202_151041.mat,data_mat_files/NML_07/2026_02_02/recording_20260202_151041.mat,uploaded,success
+2026-07-14T19:48:36,NML_07,2026_02_03,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_03/recording_20260203_150026.mat,data_mat_files/NML_07/2026_02_03/recording_20260203_150026.mat,uploaded,success
+2026-07-14T19:48:57,NML_07,2026_02_04,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_04/recording_20260204_152009.mat,data_mat_files/NML_07/2026_02_04/recording_20260204_152009.mat,uploaded,success
+2026-07-14T19:49:42,NML_07,2026_02_05,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_05/recording_20260205_150710.mat,data_mat_files/NML_07/2026_02_05/recording_20260205_150710.mat,uploaded,success
+2026-07-14T19:50:07,NML_07,2026_02_06,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_06/recording_20260206_141725.mat,data_mat_files/NML_07/2026_02_06/recording_20260206_141725.mat,uploaded,success
+2026-07-14T19:50:36,NML_07,2026_02_07,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_07/recording_20260207_152254.mat,data_mat_files/NML_07/2026_02_07/recording_20260207_152254.mat,uploaded,success
+2026-07-14T19:50:56,NML_07,2026_02_08,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_08/recording_20260208_124448.mat,data_mat_files/NML_07/2026_02_08/recording_20260208_124448.mat,uploaded,success
+2026-07-14T19:51:47,NML_07,2026_02_09,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_09/recording_20260209_141438.mat,data_mat_files/NML_07/2026_02_09/recording_20260209_141438.mat,uploaded,success
+2026-07-14T19:52:47,NML_07,2026_02_10,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_10/recording_20260210_151408.mat,data_mat_files/NML_07/2026_02_10/recording_20260210_151408.mat,uploaded,success
+2026-07-14T19:53:11,NML_07,2026_02_11,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_11/recording_20260211_151411.mat,data_mat_files/NML_07/2026_02_11/recording_20260211_151411.mat,uploaded,success
+2026-07-14T19:54:10,NML_07,2026_02_12,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_12/recording_20260212_153034.mat,data_mat_files/NML_07/2026_02_12/recording_20260212_153034.mat,uploaded,success
+2026-07-14T19:55:12,NML_07,2026_02_13,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_13/recording_20260213_142657.mat,data_mat_files/NML_07/2026_02_13/recording_20260213_142657.mat,uploaded,success
+2026-07-14T19:55:40,NML_07,2026_02_14,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_14/recording_20260214_150054.mat,data_mat_files/NML_07/2026_02_14/recording_20260214_150054.mat,uploaded,success
+2026-07-14T19:56:37,NML_07,2026_02_15,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_15/recording_20260215_151302.mat,data_mat_files/NML_07/2026_02_15/recording_20260215_151302.mat,uploaded,success
+2026-07-14T19:57:02,NML_07,2026_02_16,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_16/recording_20260216_133643.mat,data_mat_files/NML_07/2026_02_16/recording_20260216_133643.mat,uploaded,success
+2026-07-14T19:57:59,NML_07,2026_02_17,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_17/recording_20260217_151525.mat,data_mat_files/NML_07/2026_02_17/recording_20260217_151525.mat,uploaded,success
+2026-07-14T19:58:22,NML_07,2026_02_18,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_18/recording_20260218_143441.mat,data_mat_files/NML_07/2026_02_18/recording_20260218_143441.mat,uploaded,success
+2026-07-14T19:59:17,NML_07,2026_02_19,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_19/recording_20260219_153728.mat,data_mat_files/NML_07/2026_02_19/recording_20260219_153728.mat,uploaded,success
+2026-07-14T19:59:45,NML_07,2026_02_20,habituation,/mnt/data/Classical_Conditioning/NML_07/2026_02_20/recording_20260220_133851.mat,data_mat_files/NML_07/2026_02_20/recording_20260220_133851.mat,uploaded,success
+2026-07-14T20:00:08,NML_07,2026_02_21,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_02_21/recording_20260221_150900.mat,data_mat_files/NML_07/2026_02_21/recording_20260221_150900.mat,uploaded,success
+2026-07-14T20:00:32,NML_07,2026_02_22,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_02_22/recording_20260222_152427.mat,data_mat_files/NML_07/2026_02_22/recording_20260222_152427.mat,uploaded,success
+2026-07-14T20:00:37,NML_07,2026_02_23,air_training,,data_mat_files/NML_07/2026_02_23/MISSING_RECORDING,missing,recording is None
+2026-07-14T20:00:55,NML_07,2026_02_25,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_02_25/recording_20260225_141810.mat,data_mat_files/NML_07/2026_02_25/recording_20260225_141810.mat,uploaded,success
+2026-07-14T20:01:15,NML_07,2026_02_26,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_02_26/recording_20260226_145904.mat,data_mat_files/NML_07/2026_02_26/recording_20260226_145904.mat,uploaded,success
+2026-07-14T20:01:36,NML_07,2026_02_27,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_02_27/recording_20260227_145635.mat,data_mat_files/NML_07/2026_02_27/recording_20260227_145635.mat,uploaded,success
+2026-07-14T20:02:03,NML_07,2026_02_28,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_02_28/recording_20260228_145806.mat,data_mat_files/NML_07/2026_02_28/recording_20260228_145806.mat,uploaded,success
+2026-07-14T20:02:26,NML_07,2026_03_01,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_01/recording_20260301_144139.mat,data_mat_files/NML_07/2026_03_01/recording_20260301_144139.mat,uploaded,success
+2026-07-14T20:02:45,NML_07,2026_03_02,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_02/recording_20260302_145947.mat,data_mat_files/NML_07/2026_03_02/recording_20260302_145947.mat,uploaded,success
+2026-07-14T20:03:10,NML_07,2026_03_03,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_03/recording_20260303_145324.mat,data_mat_files/NML_07/2026_03_03/recording_20260303_145324.mat,uploaded,success
+2026-07-14T20:03:29,NML_07,2026_03_04,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_04/recording_20260304_142722.mat,data_mat_files/NML_07/2026_03_04/recording_20260304_142722.mat,uploaded,success
+2026-07-14T20:04:32,NML_07,2026_03_05,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_05/recording_20260305_143803.mat,data_mat_files/NML_07/2026_03_05/recording_20260305_143803.mat,uploaded,success
+2026-07-14T20:05:17,NML_07,2026_03_06,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_06/recording_20260306_141902.mat,data_mat_files/NML_07/2026_03_06/recording_20260306_141902.mat,uploaded,success
+2026-07-14T20:05:37,NML_07,2026_03_07,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_07/recording_20260307_142220.mat,data_mat_files/NML_07/2026_03_07/recording_20260307_142220.mat,uploaded,success
+2026-07-14T20:05:58,NML_07,2026_03_08,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_08/recording_20260308_143856.mat,data_mat_files/NML_07/2026_03_08/recording_20260308_143856.mat,uploaded,success
+2026-07-14T20:06:20,NML_07,2026_03_09,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_09/recording_20260309_143122.mat,data_mat_files/NML_07/2026_03_09/recording_20260309_143122.mat,uploaded,success
+2026-07-14T20:06:44,NML_07,2026_03_10,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_10/recording_20260310_144433.mat,data_mat_files/NML_07/2026_03_10/recording_20260310_144433.mat,uploaded,success
+2026-07-14T20:07:03,NML_07,2026_03_11,air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_11/recording_20260311_144950.mat,data_mat_files/NML_07/2026_03_11/recording_20260311_144950.mat,uploaded,success
+2026-07-14T20:07:24,NML_07,2026_03_12,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_12/recording_20260312_145253.mat,data_mat_files/NML_07/2026_03_12/recording_20260312_145253.mat,uploaded,success
+2026-07-14T20:07:48,NML_07,2026_03_13,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_13/recording_20260313_144747.mat,data_mat_files/NML_07/2026_03_13/recording_20260313_144747.mat,uploaded,success
+2026-07-14T20:08:08,NML_07,2026_03_14,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_14/recording_20260314_143430.mat,data_mat_files/NML_07/2026_03_14/recording_20260314_143430.mat,uploaded,success
+2026-07-14T20:08:29,NML_07,2026_03_15,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_15/recording_20260315_144725.mat,data_mat_files/NML_07/2026_03_15/recording_20260315_144725.mat,uploaded,success
+2026-07-14T20:08:51,NML_07,2026_03_16,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_16/recording_20260316_141720.mat,data_mat_files/NML_07/2026_03_16/recording_20260316_141720.mat,uploaded,success
+2026-07-14T20:09:18,NML_07,2026_03_17,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_17/recording_20260317_144722.mat,data_mat_files/NML_07/2026_03_17/recording_20260317_144722.mat,uploaded,success
+2026-07-14T20:09:39,NML_07,2026_03_18,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_18/recording_20260318_143520.mat,data_mat_files/NML_07/2026_03_18/recording_20260318_143520.mat,uploaded,success
+2026-07-14T20:10:02,NML_07,2026_03_19,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_19/recording_20260319_144328.mat,data_mat_files/NML_07/2026_03_19/recording_20260319_144328.mat,uploaded,success
+2026-07-14T20:10:25,NML_07,2026_03_20,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_20/recording_20260320_143742.mat,data_mat_files/NML_07/2026_03_20/recording_20260320_143742.mat,uploaded,success
+2026-07-14T20:11:07,NML_07,2026_03_21,tone_air_training,/mnt/data/Classical_Conditioning/NML_07/2026_03_21/recording_20260321_143739.mat,data_mat_files/NML_07/2026_03_21/recording_20260321_143739.mat,uploaded,success
+2026-07-14T20:11:29,NML_08,2026_02_02,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_02/recording_20260202_154423.mat,data_mat_files/NML_08/2026_02_02/recording_20260202_154423.mat,uploaded,success
+2026-07-14T20:11:49,NML_08,2026_02_03,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_03/recording_20260203_152642.mat,data_mat_files/NML_08/2026_02_03/recording_20260203_152642.mat,uploaded,success
+2026-07-14T20:12:10,NML_08,2026_02_04,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_04/recording_20260204_144425.mat,data_mat_files/NML_08/2026_02_04/recording_20260204_144425.mat,uploaded,success
+2026-07-14T20:12:29,NML_08,2026_02_05,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_05/recording_20260205_153337.mat,data_mat_files/NML_08/2026_02_05/recording_20260205_153337.mat,uploaded,success
+2026-07-14T20:12:50,NML_08,2026_02_06,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_06/recording_20260206_144545.mat,data_mat_files/NML_08/2026_02_06/recording_20260206_144545.mat,uploaded,success
+2026-07-14T20:13:12,NML_08,2026_02_07,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_07/recording_20260207_154958.mat,data_mat_files/NML_08/2026_02_07/recording_20260207_154958.mat,uploaded,success
+2026-07-14T20:13:34,NML_08,2026_02_08,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_08/recording_20260208_130937.mat,data_mat_files/NML_08/2026_02_08/recording_20260208_130937.mat,uploaded,success
+2026-07-14T20:13:55,NML_08,2026_02_09,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_09/recording_20260209_144014.mat,data_mat_files/NML_08/2026_02_09/recording_20260209_144014.mat,uploaded,success
+2026-07-14T20:14:15,NML_08,2026_02_10,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_10/recording_20260210_153809.mat,data_mat_files/NML_08/2026_02_10/recording_20260210_153809.mat,uploaded,success
+2026-07-14T20:14:45,NML_08,2026_02_11,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_11/recording_20260211_154821.mat,data_mat_files/NML_08/2026_02_11/recording_20260211_154821.mat,uploaded,success
+2026-07-14T20:15:07,NML_08,2026_02_12,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_12/recording_20260212_155602.mat,data_mat_files/NML_08/2026_02_12/recording_20260212_155602.mat,uploaded,success
+2026-07-14T20:15:29,NML_08,2026_02_13,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_13/recording_20260213_150348.mat,data_mat_files/NML_08/2026_02_13/recording_20260213_150348.mat,uploaded,success
+2026-07-14T20:15:48,NML_08,2026_02_14,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_14/recording_20260214_152707.mat,data_mat_files/NML_08/2026_02_14/recording_20260214_152707.mat,uploaded,success
+2026-07-14T20:16:14,NML_08,2026_02_15,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_15/recording_20260215_153747.mat,data_mat_files/NML_08/2026_02_15/recording_20260215_153747.mat,uploaded,success
+2026-07-14T20:16:35,NML_08,2026_02_16,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_16/recording_20260216_140540.mat,data_mat_files/NML_08/2026_02_16/recording_20260216_140540.mat,uploaded,success
+2026-07-14T20:16:54,NML_08,2026_02_17,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_17/recording_20260217_154144.mat,data_mat_files/NML_08/2026_02_17/recording_20260217_154144.mat,uploaded,success
+2026-07-14T20:17:18,NML_08,2026_02_18,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_18/recording_20260218_150841.mat,data_mat_files/NML_08/2026_02_18/recording_20260218_150841.mat,uploaded,success
+2026-07-14T20:17:46,NML_08,2026_02_19,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_19/recording_20260219_160304.mat,data_mat_files/NML_08/2026_02_19/recording_20260219_160304.mat,uploaded,success
+2026-07-14T20:18:10,NML_08,2026_02_20,habituation,/mnt/data/Classical_Conditioning/NML_08/2026_02_20/recording_20260220_140715.mat,data_mat_files/NML_08/2026_02_20/recording_20260220_140715.mat,uploaded,success
+2026-07-14T20:18:35,NML_08,2026_02_21,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_02_21/recording_20260221_153923.mat,data_mat_files/NML_08/2026_02_21/recording_20260221_153923.mat,uploaded,success
+2026-07-14T20:18:57,NML_08,2026_02_22,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_02_22/recording_20260222_155108.mat,data_mat_files/NML_08/2026_02_22/recording_20260222_155108.mat,uploaded,success
+2026-07-14T20:19:02,NML_08,2026_02_23,air_training,,data_mat_files/NML_08/2026_02_23/MISSING_RECORDING,missing,recording is None
+2026-07-14T20:19:18,NML_08,2026_02_25,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_02_25/recording_20260225_144528.mat,data_mat_files/NML_08/2026_02_25/recording_20260225_144528.mat,uploaded,success
+2026-07-14T20:19:58,NML_08,2026_02_26,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_02_26/recording_20260226_153415.mat,data_mat_files/NML_08/2026_02_26/recording_20260226_153415.mat,uploaded,success
+2026-07-14T20:20:19,NML_08,2026_02_27,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_02_27/recording_20260227_152422.mat,data_mat_files/NML_08/2026_02_27/recording_20260227_152422.mat,uploaded,success
+2026-07-14T20:20:45,NML_08,2026_02_28,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_02_28/recording_20260228_142231.mat,data_mat_files/NML_08/2026_02_28/recording_20260228_142231.mat,uploaded,success
+2026-07-14T20:21:07,NML_08,2026_03_01,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_01/recording_20260301_151653.mat,data_mat_files/NML_08/2026_03_01/recording_20260301_151653.mat,uploaded,success
+2026-07-14T20:21:34,NML_08,2026_03_02,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_02/recording_20260302_152525.mat,data_mat_files/NML_08/2026_03_02/recording_20260302_152525.mat,uploaded,success
+2026-07-14T20:21:56,NML_08,2026_03_03,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_03/recording_20260303_152352.mat,data_mat_files/NML_08/2026_03_03/recording_20260303_152352.mat,uploaded,success
+2026-07-14T20:22:20,NML_08,2026_03_04,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_04/recording_20260304_145528.mat,data_mat_files/NML_08/2026_03_04/recording_20260304_145528.mat,uploaded,success
+2026-07-14T20:23:04,NML_08,2026_03_05,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_05/recording_20260305_150743.mat,data_mat_files/NML_08/2026_03_05/recording_20260305_150743.mat,uploaded,success
+2026-07-14T20:23:27,NML_08,2026_03_06,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_06/recording_20260306_144932.mat,data_mat_files/NML_08/2026_03_06/recording_20260306_144932.mat,uploaded,success
+2026-07-14T20:23:49,NML_08,2026_03_07,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_07/recording_20260307_144948.mat,data_mat_files/NML_08/2026_03_07/recording_20260307_144948.mat,uploaded,success
+2026-07-14T20:24:11,NML_08,2026_03_08,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_08/recording_20260308_151055.mat,data_mat_files/NML_08/2026_03_08/recording_20260308_151055.mat,uploaded,success
+2026-07-14T20:24:34,NML_08,2026_03_09,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_09/recording_20260309_145822.mat,data_mat_files/NML_08/2026_03_09/recording_20260309_145822.mat,uploaded,success
+2026-07-14T20:24:56,NML_08,2026_03_10,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_10/recording_20260310_151623.mat,data_mat_files/NML_08/2026_03_10/recording_20260310_151623.mat,uploaded,success
+2026-07-14T20:25:20,NML_08,2026_03_11,air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_11/recording_20260311_151800.mat,data_mat_files/NML_08/2026_03_11/recording_20260311_151800.mat,uploaded,success
+2026-07-14T20:25:46,NML_08,2026_03_12,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_12/recording_20260312_152604.mat,data_mat_files/NML_08/2026_03_12/recording_20260312_152604.mat,uploaded,success
+2026-07-14T20:26:05,NML_08,2026_03_13,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_13/recording_20260313_151521.mat,data_mat_files/NML_08/2026_03_13/recording_20260313_151521.mat,uploaded,success
+2026-07-14T20:26:28,NML_08,2026_03_14,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_14/recording_20260314_150929.mat,data_mat_files/NML_08/2026_03_14/recording_20260314_150929.mat,uploaded,success
+2026-07-14T20:26:50,NML_08,2026_03_15,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_15/recording_20260315_151453.mat,data_mat_files/NML_08/2026_03_15/recording_20260315_151453.mat,uploaded,success
+2026-07-14T20:27:14,NML_08,2026_03_16,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_16/recording_20260316_144406.mat,data_mat_files/NML_08/2026_03_16/recording_20260316_144406.mat,uploaded,success
+2026-07-14T20:27:33,NML_08,2026_03_17,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_17/recording_20260317_151931.mat,data_mat_files/NML_08/2026_03_17/recording_20260317_151931.mat,uploaded,success
+2026-07-14T20:28:04,NML_08,2026_03_18,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_18/recording_20260318_151125.mat,data_mat_files/NML_08/2026_03_18/recording_20260318_151125.mat,uploaded,success
+2026-07-14T20:28:29,NML_08,2026_03_19,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_19/recording_20260319_151653.mat,data_mat_files/NML_08/2026_03_19/recording_20260319_151653.mat,uploaded,success
+2026-07-14T20:28:53,NML_08,2026_03_20,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_20/recording_20260320_150612.mat,data_mat_files/NML_08/2026_03_20/recording_20260320_150612.mat,uploaded,success
+2026-07-14T20:29:12,NML_08,2026_03_21,tone_air_training,/mnt/data/Classical_Conditioning/NML_08/2026_03_21/recording_20260321_150754.mat,data_mat_files/NML_08/2026_03_21/recording_20260321_150754.mat,uploaded,success
